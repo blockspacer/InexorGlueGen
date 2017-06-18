@@ -6,12 +6,12 @@ class InexorgluegenConan(ConanFile):
     description = """This is the conan.io package for the Inexor game gluecode generator, which generates our network code (which is also our scripting binding)
                      to sync variables/classes/lists without writing extra code."""
     license = "ZLIB"
-    url = "https://github.com/inexor-game/code/"
+    url = "https://github.com/inexorgame/inexor-core/"
     # Note:  we always want it to be built as release build, as its distributed as executable only.
     settings = "os", "compiler", "build_type", "arch"
     requires = (("Kainjow_Mustache/2.0@inexorgame/stable"),
             ("pugixml/1.7@inexorgame/testing"),
-            ("Boost/1.60.0@lasote/stable"))
+            ("Boost/1.62.0@lasote/stable"))
 
     # Usage dependencies: grpc (+ protobuf), doxygen
     default_options = "Boost:shared=False"
