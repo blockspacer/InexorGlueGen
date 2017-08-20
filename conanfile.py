@@ -11,7 +11,7 @@ class InexorgluegenConan(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
     requires = (("Kainjow_Mustache/2.0@inexorgame/stable"),
             ("pugixml/1.7@inexorgame/testing"),
-            ("Boost/1.62.0@lasote/stable"))
+            ("Boost/1.64.0@lasote/stable"))
 
     # Usage dependencies: grpc (+ protobuf), doxygen
     default_options = "Boost:shared=False"
