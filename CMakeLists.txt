@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.1)
 include(cmake/functions.cmake)
-cmake_minimum_required(VERSION 3.1)
-include(cmake/functions.cmake)
 include(cmake/silence_find_pathprogram.cmake)
 
 ### Different Configuration Types (Debug release)

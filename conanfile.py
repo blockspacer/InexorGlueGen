@@ -19,7 +19,7 @@ class InexorgluegenConan(ConanFile):
     exports_sources = "inexor*", "cmake*", "CMakeLists.txt", "require_run_gluegen.cmake"
 
     def build(self):
-        cmake = CMake(self.settings)
+        cmake = CMake(self)
         args = [""]
         self.run('cmake . {} {}'.format(cmake.command_line, " ".join(args)))
         self.run("cmake --build . {}".format(cmake.build_config))
