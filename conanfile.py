@@ -1,8 +1,9 @@
 from conans import ConanFile, CMake
 
+
 class InexorgluegenConan(ConanFile):
     name = "InexorGlueGen"
-    version = "0.6.0alpha"
+    version = "0.6.1"
     description = """This is the conan.io package for the Inexor game gluecode generator, which generates our network code (which is also our scripting binding)
                      to sync variables/classes/lists without writing extra code."""
     license = "ZLIB"
@@ -10,7 +11,7 @@ class InexorgluegenConan(ConanFile):
     # Note:  we always want it to be built as release build, as its distributed as executable only.
     settings = "os", "compiler", "build_type", "arch"
     requires = (("Kainjow_Mustache/2.0@inexorgame/stable"),
-            ("pugixml/1.7@inexorgame/testing"),
+            ("pugixml/1.7@inexorgame/stable"),
             ("Boost/1.64.0@lasote/stable"))
 
     # Usage dependencies: grpc (+ protobuf), doxygen
