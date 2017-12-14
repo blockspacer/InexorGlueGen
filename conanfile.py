@@ -13,7 +13,7 @@ class InexorgluegenConan(ConanFile):
     requires = (("Kainjow_Mustache/2.0@inexorgame/stable"),
             ("pugixml/1.7@inexorgame/stable"),
             ("cmake-findboost/0.2.0@bincrafters/stable"),
-            ("Boost.FileSystem/1.65.1@bincrafters/stable"),
+            ("Boost.Filesystem/1.65.1@bincrafters/stable"),
             ("Boost.Program_Options/1.65.1@bincrafters/stable"),
             ("Boost.Random/1.65.1@bincrafters/stable"),
             ("Boost.Regex/1.65.1@bincrafters/stable"),
