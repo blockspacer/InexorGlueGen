@@ -3,7 +3,7 @@ from conans import ConanFile, CMake
 
 class InexorgluegenConan(ConanFile):
     name = "InexorGlueGen"
-    version = "0.6.1"
+    version = "0.6.2"
     description = """This is the conan.io package for the Inexor game gluecode generator, which generates our network code (which is also our scripting binding)
                      to sync variables/classes/lists without writing extra code."""
     license = "ZLIB"
@@ -12,10 +12,15 @@ class InexorgluegenConan(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
     requires = (("Kainjow_Mustache/2.0@inexorgame/stable"),
             ("pugixml/1.7@inexorgame/stable"),
-            ("Boost/1.64.0@lasote/stable"))
+            ("cmake-findboost/0.2.0@bincrafters/stable"),
+            ("Boost.FileSystem/1.65.1@bincrafters/stable"),
+            ("Boost.Program_Options/1.65.1@bincrafters/stable"),
+            ("Boost.Random/1.65.1@bincrafters/stable"),
+            ("Boost.Regex/1.65.1@bincrafters/stable"),
+            ("Boost.System/1.65.1@bincrafters/stable"),
+            ("Boost.Thread/1.65.1@bincrafters/stable"))
 
     # Usage dependencies: grpc (+ protobuf), doxygen
-    default_options = "Boost:shared=False"
     generators = "cmake"
     exports_sources = "inexor*", "cmake*", "CMakeLists.txt", "require_run_gluegen.cmake"
 
