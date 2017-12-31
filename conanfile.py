@@ -4,7 +4,7 @@ from conans import ConanFile, CMake
 class InexorgluegenConan(ConanFile):
     name = "InexorGlueGen"
     version = "0.6.2"
-    description = """This is the conan.io package for the Inexor game gluecode generator, which generates our network code (which is also our scripting binding)
+    description = """This is the Conan package for the Inexor game gluecode generator, which generates our network code (which is also our scripting binding)
                      to sync variables/classes/lists without writing extra code."""
     license = "ZLIB"
     url = "https://github.com/inexorgame/inexor-core/"
@@ -15,9 +15,7 @@ class InexorgluegenConan(ConanFile):
             ("cmake-findboost/0.2.0@bincrafters/stable"),
             ("Boost.Filesystem/1.65.1@bincrafters/stable"),
             ("Boost.Program_Options/1.65.1@bincrafters/stable"),
-            ("Boost.Random/1.65.1@bincrafters/stable"),
             ("Boost.Regex/1.65.1@bincrafters/stable"),
-            ("Boost.System/1.65.1@bincrafters/stable"),
             ("Boost.Thread/1.65.1@bincrafters/stable"))
 
     # Usage dependencies: grpc (+ protobuf), doxygen
