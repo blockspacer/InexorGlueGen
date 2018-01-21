@@ -38,10 +38,11 @@ list(APPEND GCC_OR_CLANG_COMPILER_FLAGS_RELEASE
 )
 list(APPEND GCC_OR_CLANG_LINKER_FLAGS
   -Wl,-rpath,.                    # Set rpath so that libraries can be placed next to the executable
+  -Wl,--as-needed                 # Only link libraries that export symbols used by the binary
+  -static-libstdc++               # Link statically
 )
 list(APPEND GCC_OR_CLANG_LINKER_FLAGS_RELEASE
   -Wl,-O1                         # Enable linker optimizations
-  -Wl,--as-needed                 # Only link libraries that export symbols used by the binary
   -Wl,--gc-sections               # Remove unused code resulting from -fdata-sections and -function-sections
 )
 
@@ -109,9 +110,9 @@ list(APPEND MSVC_LINKER_FLAGS_RELEASE
   )
 
 if(OS_MACOS)
-    list(APPEND GCC_OR_CLANG_LINKER_FLAGS_RELEASE
-      -flto                             # Enable link time optimizations (otherwhise -O doesn't work)
-    )
+  list(APPEND GCC_OR_CLANG_LINKER_FLAGS_RELEASE
+    -flto                             # Enable link time optimizations (otherwhise -O doesn't work)
+  )
 endif()
 
 # Just merge compiler/linker flags (specific to the used compiler)
