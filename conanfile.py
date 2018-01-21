@@ -11,12 +11,8 @@ class InexorgluegenConan(ConanFile):
     # Note:  we always want it to be built as release build, as its distributed as executable only.
     settings = "os", "compiler", "build_type", "arch"
     requires = (("Kainjow_Mustache/2.0@inexorgame/stable"),
-            ("pugixml/1.8.1@inexorgame/stable"),
-            ("cmake-findboost/0.2.0@bincrafters/stable"),
-            ("boost_filesystem/1.66.0@bincrafters/stable"),
-            ("boost_program_options/1.66.0@bincrafters/stable"),
-            ("boost_regex/1.66.0@bincrafters/stable"),
-            ("boost_thread/1.66.0@bincrafters/stable"))
+            ("pugixml/1.7@inexorgame/stable"),
+            ("Boost/1.66.0@conan/stable"))
 
     # Usage dependencies: grpc (+ protobuf), doxygen
     generators = "cmake"
