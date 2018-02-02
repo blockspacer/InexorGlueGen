@@ -46,10 +46,13 @@ if(NOT OS_MACOS)
   list(APPEND GCC_OR_CLANG_LINKER_FLAGS
     -Wl,--as-needed                 # Only link libraries that export symbols used by the binary
   )
+
+  list(APPEND GCC_OR_CLANG_LINKER_FLAGS_RELEASE
+    -Wl,-O1                         # Enable linker optimizations
+  )
 endif()
 
 list(APPEND GCC_OR_CLANG_LINKER_FLAGS_RELEASE
-  -Wl,-O1                         # Enable linker optimizations
   -Wl,--gc-sections               # Remove unused code resulting from -fdata-sections and -function-sections
 )
 
@@ -118,7 +121,7 @@ list(APPEND MSVC_LINKER_FLAGS_RELEASE
 
 if(OS_MACOS)
   list(APPEND GCC_OR_CLANG_LINKER_FLAGS_RELEASE
-    -flto                             # Enable link time optimizations (otherwhise -O doesn't work)
+    -flto                             # Enable link time optimizations
   )
 endif()
 
