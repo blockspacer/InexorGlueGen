@@ -12,8 +12,7 @@ class InexorgluegenConan(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
     requires = (("kainjow-mustache/3.1@inexorgame/stable"),
             ("pugixml/1.7@inexorgame/stable"),
-            ("Boost/1.66.0@conan/stable"),
-            ("doxygen/1.8.13@inexorgame/stable"))
+            ("Boost/1.66.0@conan/stable"))
 
     # Usage dependencies: grpc (+ protobuf), doxygen
     generators = "cmake"
