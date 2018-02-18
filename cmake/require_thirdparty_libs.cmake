@@ -51,6 +51,7 @@ set(BOOST_INCLUDEDIR ${CONAN_INCLUDE_DIRS_BOOST})
 #set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_MULTITHREADED ON)
 #set(Boost_USE_STATIC_RUNTIME ON)
+set(Boost_NO_SYSTEM_PATHS ON)
 
 # Use the same threading as we found out from find_package(Threads)
 add_definitions(-DBOOST_ALL_NO_LIB ${CONAN_DEFINES_BOOST})
@@ -71,6 +72,7 @@ find_package(Boost REQUIRED
   filesystem
   regex
   program_options
+  system
 )
 
 # This macro lets us create a require_boost_XY for all other libs. name is the canonical name without spaces, e.g. "program_options"
@@ -102,24 +104,11 @@ add_require_boost_lib_function(program_options "" "")
 # This macro lets us create a require_xy (with XY being the name of the library) without code duplication
 # but just the name of the library (as it can be found in conan).
 # require_xy is all lower case. LIMITATION: lib name ("XY") is not allowed to contain "-".
-# Additional defines can be put last (e.g. "-DWINDOWS=0 -DDEFINENOSTATICS"), in case conanfile.txt don't provide the necessary arguments for them.
 macro(add_require_conan_lib_function name)
-  string(TOLOWER ${name} name_lower) # Tow different scopes for name_lower and NAME_UPPER: this a macro which does simple text replacement.
+  string(TOLOWER ${name} name_lower)
   string(REPLACE "-" "_" name_lower_alphanumeric ${name_lower})
   function(require_${name_lower_alphanumeric} targ)
-    message(STATUS "Configuring ${targ} with library ${name}")
-
-    # This is a macro so the name_lower will have been overridden by other add_require_conan_lib_function invocations in the main time.
-    string(TOUPPER ${name} NAME_UPPER)
-    set(OUR_DEFINITIONS "")
-    foreach(DEF ${CONAN_DEFINES_${NAME_UPPER}} ${ARGN}) # We must remove the -D before each of them..
-      string(REPLACE "-D" "" NEW_DEF ${DEF})
-      list(APPEND OUR_DEFINITIONS ${NEW_DEF})
-    endforeach()
-
-    target_compile_definitions(${targ} PUBLIC ${OUR_DEFINITIONS})
-    target_include_directories(${targ} PUBLIC ${CONAN_INCLUDE_DIRS_${NAME_UPPER}})
-    target_link_libraries(${targ} ${CONAN_LIBS_${NAME_UPPER}})
+    target_link_libraries(${targ} CONAN_PKG::${name})
   endfunction()
 endmacro()
 
@@ -129,33 +118,29 @@ add_require_conan_lib_function(gtest)
 # PugiXML (xml parser, used for our gluecode generator)
 add_require_conan_lib_function(pugixml)
 
-# Kainjow-Mustache (a template engine, used for our gluecode generator)
-add_require_conan_lib_function(Kainjow_Mustache)
-
-# Rapidjson (JSON parser)
-add_require_conan_lib_function(RapidJSON "-DRAPIDJSON_SSE2")
+# kainjow-mustache (a template engine, used for our gluecode generator)
+add_require_conan_lib_function(kainjow-mustache)
 
 # ZLIB (fast file compression)
 add_require_conan_lib_function(zlib)
 
 # ENet (reliable UDP networking lib)
-add_require_conan_lib_function(enet)
+add_require_conan_lib_function(ENet)
 
 # Protobuf (XML or JSON like serialization format but in binary, so it needs an compiler)
+set(protobuf_MODULE_COMPATIBLE ON)
 add_require_conan_lib_function(Protobuf)
-find_program(Protobuf REQUIRED) 
-if (NOT DEFINED PROTOBUF_PROTOC_EXECUTABLE) # We additionally do this, since we don't have the "PROTOBUF_PROTOC_EXECUTABLE" path anywhere.
-  find_program(PROTOBUF_PROTOC_EXECUTABLE protoc PATHS ${CONAN_BIN_DIRS_PROTOBUF} NO_CMAKE_ENVIRONMENT_PATH  NO_CMAKE_PATH NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH )
-endif()
+find_program(PROTOBUF_PROTOC_EXECUTABLE protoc PATHS ${CONAN_BIN_DIRS_PROTOBUF} NO_CMAKE_ENVIRONMENT_PATH  NO_CMAKE_PATH NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH )
 
 # gRPC (googles remote procedure call framework, used for Inexors networking and scripting binding)
 add_require_conan_lib_function(gRPC)
-if (NOT DEFINED GRPC_GRPC_CPP_PLUGIN) # We additionally do this, since we don't have the "PROTOBUF_PROTOC_EXECUTABLE" path anywhere.
-  find_program(GRPC_GRPC_CPP_PLUGIN grpc_cpp_plugin PATHS ${CONAN_BIN_DIRS_GRPC} NO_CMAKE_ENVIRONMENT_PATH  NO_CMAKE_PATH NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH )
-endif()
+find_program(GRPC_GRPC_CPP_PLUGIN grpc_cpp_plugin PATHS ${CONAN_BIN_DIRS_GRPC} NO_CMAKE_ENVIRONMENT_PATH  NO_CMAKE_PATH NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH )
 
 # spdlog (fast logging library)
 add_require_conan_lib_function(spdlog)
+
+# fmt (fast and convenient formatting library)
+add_require_conan_lib_function(fmt)
 
 # CEF Chromium Embedded Framework (Embedded Browser used for the UI)
 add_require_conan_lib_function(CEF)
@@ -166,23 +151,23 @@ add_require_conan_lib_function(SDL2)
 # SDL_image (image loader library)
 add_require_conan_lib_function(SDL2_image)
 
+# libjpeg turbo a dependency of SDL2_image
+add_require_conan_lib_function(libjpeg-turbo)
+
+# libpng a dependency of SDL2_image
+add_require_conan_lib_function(libpng)
+
 # SDL_mixer (sound library)
-add_require_conan_lib_function(SDL2_mixer)
+# add_require_conan_lib_function(SDL2_mixer)
 
 ## Wrapper for all SDL libs (you usually want all of them)
 function(require_sdl targ)
   message(STATUS "Configuring ${targ} with SDL")
-  
-#  if(OS_WINDOWS)
-#    target_link_libraries(${targ} winmm)
-#    if(NOT MSVC)
-#      add_definitions(-mwindows) # This is GUI!
-#    endif()
-#  elseif(OS_POSIX)
-#    target_link_libraries(${targ} dl rt)
-#  endif()
+
   require_sdl2(${targ})
+  require_libjpeg_turbo(${targ})
+  require_libpng(${targ})
   require_sdl2_image(${targ})
-  require_sdl2_mixer(${targ})
+ # require_sdl2_mixer(${targ})
   require_opengl(${targ})
 endfunction()

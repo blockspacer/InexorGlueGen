@@ -12,5 +12,4 @@ require_pugixml(gluecodegenerator)
 require_kainjow_mustache(gluecodegenerator)
 require_boost_program_options(gluecodegenerator)
 require_boost_regex(gluecodegenerator)
-
 require_filesystem(gluecodegenerator)

@@ -23,7 +23,7 @@ include(cmake/compile_flags_and_defs.cmake)
 
 # Add conan dependencies (our C++ dependency manager)
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-conan_basic_setup()
+conan_basic_setup(TARGETS)
 
 # And we split them accordingly into different require_XY() functions
 include(cmake/require_thirdparty_libs.cmake)
@@ -55,8 +55,6 @@ install(DIRECTORY "${CMAKE_BINARY_DIR}/bin/" DESTINATION "${EXE_DIR}" USE_SOURCE
 message(STATUS "Generating Project-Files to ${CMAKE_CURRENT_BINARY_DIR}")
 message(STATUS "Resulting Executable goes to ${EXE_DIR}")
 
-
-message(WARNING "Requirements: Git, Python, CMake, Doxygen, a Compiler and Node.js")
 
 option(CREATE_PACKAGE "If enabled we can create a distributable package by building the target \"PACKAGE\"" OFF)
 if(CREATE_PACKAGE)
