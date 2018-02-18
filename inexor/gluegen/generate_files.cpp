@@ -17,8 +17,8 @@ void render_proto_file(const std::string &out_path, const std::string &template_
     const std::string template_file_contents(filecontents(template_path));
 
     MustacheTemplate tmpl{template_file_contents.c_str()};
-    if(!tmpl.isValid())
-        std::cout << "Template file " << template_path << " malformatted: " << tmpl.errorMessage() << std::endl;
+    if(!tmpl.is_valid())
+        std::cout << "Template file " << template_path << " malformatted: " << tmpl.error_message() << std::endl;
 
     std::ofstream sink{out_path, std::ofstream::trunc};
     tmpl.render(tmpldata, [&sink](const std::string& str) {
@@ -32,8 +32,8 @@ void render_cpp_tree_data(const std::string &out_path, const std::string &templa
     const std::string template_file_contents(filecontents(template_path));
 
     MustacheTemplate tmpl{template_file_contents.c_str()};
-    if(!tmpl.isValid())
-        std::cout << "Template file " << template_path << " malformatted: " << tmpl.errorMessage() << std::endl;
+    if(!tmpl.is_valid())
+        std::cout << "Template file " << template_path << " malformatted: " << tmpl.error_message() << std::endl;
 
     std::ofstream sink{out_path, std::ofstream::trunc};
     tmpl.render(tmpldata, [&sink](const std::string& str) {

@@ -18,7 +18,7 @@ void add_rendered_template_hybrids(const option_definition &opt, TemplateData &v
 {
     for(auto member : opt.const_char_members)
     {
-        TemplateData template_hybrid_rendered{TemplateData::Type::Object};
+        TemplateData template_hybrid_rendered{TemplateData::type::object};
         MustacheTemplate tmpl{member.default_value};             // the default value of the const char member acts as template.
         template_hybrid_rendered["s"] = tmpl.render(constructor_args_data); // gets rendered using the data from the constructor args
         variable[member.name] << template_hybrid_rendered; // and the rendered string is templatedata for the variable (key = <name> from "const char *<name>"
@@ -45,7 +45,7 @@ void add_options_with_default_values_templatedata(TemplateData &variable, Parser
 /// Add templatedata for this shared variable coming from shared options.
 void add_options_templatedata(TemplateData &variable, vector<attached_option> attached_options, ParserContext &data)
 {
-    // renders: 1. fill data: 
+    // renders: 1. fill data:
     //             - take node constructor args, compare it with option_definition names [done]
     //             - create TemplateData instance for every constructor param
     //            1b. default values
@@ -87,7 +87,7 @@ void add_options_templatedata(TemplateData &variable, vector<attached_option> at
     // add empty lists to the variable key=the name
     for(auto opt : data.option_definitions)
         for(auto member : opt.second.const_char_members)
-            variable[member.name] = TemplateData(TemplateData::Type::List);
+            variable[member.name] = TemplateData(TemplateData::type::list);
 
     unordered_set<string> rendered_th_names;
     // render th's occuring in the constructor
@@ -114,7 +114,7 @@ void add_namespace_seps_templatedata(TemplateData &templdata, string ns_str)
 {
     vector<string> ns(split_by_delimiter(ns_str, "::"));
 
-    TemplateData namespace_sep_open{TemplateData::LambdaType{
+    TemplateData namespace_sep_open{kainjow::mustache::lambda{
         [ns](const string&)
     {
         std::stringstream ss;
@@ -128,7 +128,7 @@ void add_namespace_seps_templatedata(TemplateData &templdata, string ns_str)
         return ss.str();
     }}};
 
-    TemplateData namespace_sep_close{TemplateData::LambdaType{
+    TemplateData namespace_sep_close{kainjow::mustache::lambda{
         [ns](const std::string&)
     {
         std::stringstream ss;
@@ -145,9 +145,9 @@ void add_namespace_seps_templatedata(TemplateData &templdata, string ns_str)
 }
 
 /// Index is a very special data entry: every time it gets referenced it gets iterated!
-TemplateData::PartialType get_index_incrementer(bool reset = false)
+kainjow::mustache::partial get_index_incrementer(bool reset = false)
 {
-    return TemplateData::PartialType([reset]() {
+    return kainjow::mustache::partial([reset]() {
         static int count = 21;
         if(reset) count = 20;
         return to_string(count++);
@@ -158,12 +158,12 @@ TemplateData::PartialType get_index_incrementer(bool reset = false)
 ///        otherwise we use the tree_event index counter.. @see add_event_index_templatedata
 TemplateData get_shared_var_templatedata(ShTreeNode &node, int local_index, ParserContext &data)
 {
-    TemplateData curvariable{TemplateData::Type::Object};
+    TemplateData curvariable{TemplateData::type::object};
     // These is a hacky way to distinct between these in pure-data form.. TODO embedd logic in template?
-    curvariable.set("is_global", node.node_type==ShTreeNode::NODE_CLASS_VAR ? TemplateData::Type::False : TemplateData::Type::True);
-    curvariable.set("is_int", node.get_type_numeric()== node.t_int ? TemplateData::Type::True : TemplateData::Type::False);
-    curvariable.set("is_float", node.get_type_numeric()== node.t_float ? TemplateData::Type::True : TemplateData::Type::False);
-    curvariable.set("is_string", node.get_type_numeric()== node.t_cstring ? TemplateData::Type::True : TemplateData::Type::False);
+    curvariable.set("is_global", node.node_type==ShTreeNode::NODE_CLASS_VAR ? TemplateData::type::bool_false : TemplateData::type::bool_true);
+    curvariable.set("is_int", node.get_type_numeric()== node.t_int ? TemplateData::type::bool_true : TemplateData::type::bool_false);
+    curvariable.set("is_float", node.get_type_numeric()== node.t_float ? TemplateData::type::bool_true : TemplateData::type::bool_false);
+    curvariable.set("is_string", node.get_type_numeric()== node.t_cstring ? TemplateData::type::bool_true : TemplateData::type::bool_false);
 
     curvariable.set("type_protobuf", node.get_type_protobuf());
     curvariable.set("type_cpp_full", node.get_type_cpp_full());
@@ -185,7 +185,7 @@ TemplateData get_shared_var_templatedata(ShTreeNode &node, int local_index, Pars
 
 TemplateData get_shared_class_templatedata(shared_class_definition *def, ParserContext &ctx, bool add_instances = true)
 {
-    TemplateData cur_definition{TemplateData::Type::Object};
+    TemplateData cur_definition{TemplateData::type::object};
     // The class needs to be defined in a cleanly includeable header file.
     cur_definition.set("definition_header_file", def->containing_header);
 
@@ -196,11 +196,11 @@ TemplateData get_shared_class_templatedata(shared_class_definition *def, ParserC
 
     add_options_templatedata(cur_definition, def->attached_options, ctx);
 
-    TemplateData all_instances{TemplateData::Type::List};
+    TemplateData all_instances{TemplateData::type::list};
 
     if(add_instances) for(ShTreeNode *inst_node : def->instances)
     {
-        TemplateData cur_instance{TemplateData::Type::Object};
+        TemplateData cur_instance{TemplateData::type::object};
         add_namespace_seps_templatedata(cur_instance, inst_node->get_namespace());
 
         // The first parents name, e.g. of inexor::game::player1.weapons.ammo its player1.
@@ -213,7 +213,7 @@ TemplateData get_shared_class_templatedata(shared_class_definition *def, ParserC
         // were doing this for sharedlists, where the first template is relevant.
         if(inst_node->template_type_definition)
         {
-            TemplateData dummy_list(TemplateData::Type::List);
+            TemplateData dummy_list(TemplateData::type::list);
             dummy_list << get_shared_class_templatedata(inst_node->template_type_definition, ctx, false);
             cur_instance.set("first_template_type", std::move(dummy_list));
         }
@@ -224,7 +224,7 @@ TemplateData get_shared_class_templatedata(shared_class_definition *def, ParserC
     }
     cur_definition.set("instances", all_instances);
 
-    TemplateData members{TemplateData::Type::List};
+    TemplateData members{TemplateData::type::list};
 
     int local_index = 2;
     for(ShTreeNode *child : def->nodes)
@@ -235,7 +235,7 @@ TemplateData get_shared_class_templatedata(shared_class_definition *def, ParserC
     return cur_definition;
 }
 
-/// list shared_functions 
+/// list shared_functions
 ///   list #parameter_lists}}
 ///       function_declaration
 ///       path ?
@@ -243,11 +243,11 @@ TemplateData get_shared_class_templatedata(shared_class_definition *def, ParserC
 ///   function_name_unique [DONE]
 ///   function_name_cpp [DONE]
 ///   namespacesep [DONE]
-///        
+///
 typedef shared_function::function_parameter_list::param::PRIMITIVE_TYPES PRIMITIVE_TYPES;
 TemplateData get_shared_function_templatedata(shared_function &sf)
 {
-    TemplateData curfunction{TemplateData::Type::Object};
+    TemplateData curfunction{TemplateData::type::object};
 
     curfunction.set("function_name_cpp_full", sf.get_name_cpp_full());
     curfunction.set("function_name_unique", sf.get_unique_name());
@@ -255,36 +255,36 @@ TemplateData get_shared_function_templatedata(shared_function &sf)
     add_namespace_seps_templatedata(curfunction, sf.ns);
 
 
-    TemplateData overloads{TemplateData::Type::List};
+    TemplateData overloads{TemplateData::type::list};
 
     int overload_counter = 0;
     for(auto &paramlist : sf.parameter_lists)
     {
-        TemplateData paramlistdata{TemplateData::Type::Object};
+        TemplateData paramlistdata{TemplateData::type::object};
 
         paramlistdata.set("function_declaration", paramlist.declaration);
         paramlistdata.set("index", get_index_incrementer());
 
         paramlistdata.set("overload_counter", std::to_string(overload_counter++));
 
-        paramlistdata.set("overload_is_expanded", paramlist.clone ? TemplateData::Type::True : TemplateData::Type::False);
+        paramlistdata.set("overload_is_expanded", paramlist.clone ? TemplateData::type::bool_true : TemplateData::type::bool_false);
 
-        TemplateData params{TemplateData::Type::List};
+        TemplateData params{TemplateData::type::list};
         int local_index = 1;
         for(int i = 0; i < paramlist.params.size(); i++)
         {
             auto &param = paramlist.params[i];
 
-            TemplateData paramdata{TemplateData::Type::Object};
+            TemplateData paramdata{TemplateData::type::object};
             paramdata.set("type_protobuf", param.type==PRIMITIVE_TYPES::P_FLOAT ? "float" :
                          param.type==PRIMITIVE_TYPES::P_INT ? "int32" : "string");
-            paramdata.set("is_int", param.type==PRIMITIVE_TYPES::P_INT ? TemplateData::Type::True : TemplateData::Type::False);
-            paramdata.set("is_float", param.type==PRIMITIVE_TYPES::P_FLOAT ? TemplateData::Type::True : TemplateData::Type::False);
-            paramdata.set("is_string", param.type==PRIMITIVE_TYPES::P_STR ? TemplateData::Type::True : TemplateData::Type::False);
+            paramdata.set("is_int", param.type==PRIMITIVE_TYPES::P_INT ? TemplateData::type::bool_true : TemplateData::type::bool_false);
+            paramdata.set("is_float", param.type==PRIMITIVE_TYPES::P_FLOAT ? TemplateData::type::bool_true : TemplateData::type::bool_false);
+            paramdata.set("is_string", param.type==PRIMITIVE_TYPES::P_STR ? TemplateData::type::bool_true : TemplateData::type::bool_false);
 
             paramdata.set("param_name", param.name);
             paramdata.set("local_index", std::to_string(i+1));
-            paramdata.set("not_last_param", i == paramlist.params.size()-1 ? TemplateData::Type::False : TemplateData::Type::True);
+            paramdata.set("not_last_param", i == paramlist.params.size()-1 ? TemplateData::type::bool_false : TemplateData::type::bool_true);
             params << paramdata;
         }
         paramlistdata.set("params", params);
@@ -297,7 +297,7 @@ TemplateData get_shared_function_templatedata(shared_function &sf)
 
 TemplateData fill_templatedata(ParserContext &data, const string &ns)
 {
-    TemplateData tmpldata{TemplateData::Type::Object};
+    TemplateData tmpldata{TemplateData::type::object};
 
     tmpldata.set("file_comment", "// This file gets generated!\n"
                  "// Do not modify it directly but its corresponding template file instead!");
@@ -310,7 +310,7 @@ TemplateData fill_templatedata(ParserContext &data, const string &ns)
 
     tmpldata.set("index_reset", get_index_incrementer(true)); // This design is so fucked up.. mustache forces us too though.
 
-    TemplateData sharedvars{TemplateData::Type::List};
+    TemplateData sharedvars{TemplateData::type::list};
 
     for(ShTreeNode *node : data.instances)
     {
@@ -318,7 +318,7 @@ TemplateData fill_templatedata(ParserContext &data, const string &ns)
     }
     tmpldata.set("shared_vars", sharedvars);
 
-    TemplateData sharedclasses{TemplateData::Type::List};
+    TemplateData sharedclasses{TemplateData::type::list};
 
     for(auto class_def_it : data.shared_class_definitions)
     {
@@ -327,7 +327,7 @@ TemplateData fill_templatedata(ParserContext &data, const string &ns)
     tmpldata.set("shared_class_definitions", sharedclasses);
 
 
-    TemplateData sharedfunctionsdata{TemplateData::Type::List};
+    TemplateData sharedfunctionsdata{TemplateData::type::list};
 
     for(auto sf_it : data.shared_functions)
         sharedfunctionsdata << get_shared_function_templatedata(sf_it.second);

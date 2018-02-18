@@ -10,8 +10,8 @@
 
 namespace inexor { namespace rpc { namespace gluegen {
 
-using MustacheTemplate = Kainjow::BasicMustache<std::string>;
-using TemplateData = MustacheTemplate::Data;
+using MustacheTemplate = kainjow::mustache::basic_mustache<std::string>;
+using TemplateData = kainjow::mustache::data;
 
 extern TemplateData fill_templatedata(ParserContext &data, const std::string &ns);
 

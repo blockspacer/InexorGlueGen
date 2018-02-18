@@ -3,16 +3,17 @@ from conans import ConanFile, CMake
 
 class InexorgluegenConan(ConanFile):
     name = "InexorGlueGen"
-    version = "0.6.6"
+    version = "0.6.7"
     description = """This is the Conan package for the Inexor game gluecode generator, which generates our network code (which is also our scripting binding)
                      to sync variables/classes/lists without writing extra code."""
     license = "ZLIB"
     url = "https://github.com/inexorgame/inexor-core/"
     # Note:  we always want it to be built as release build, as its distributed as executable only.
     settings = "os", "compiler", "build_type", "arch"
-    requires = (("Kainjow_Mustache/2.0@inexorgame/stable"),
+    requires = (("kainjow-mustache/3.1@inexorgame/stable"),
             ("pugixml/1.7@inexorgame/stable"),
-            ("Boost/1.66.0@conan/stable"))
+            ("Boost/1.66.0@conan/stable"),
+            ("doxygen/1.8.13@inexorgame/stable"))
 
     # Usage dependencies: grpc (+ protobuf), doxygen
     generators = "cmake"
