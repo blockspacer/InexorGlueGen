@@ -1,7 +1,6 @@
 
 #include "inexor/gluegen/parse_helpers.hpp"
 #include "inexor/gluegen/parse_sourcecode.hpp"
-#include "inexor/gluegen/parse_sharedfunc.hpp"
 #include "inexor/gluegen/tree.hpp"
 
 #include <pugiconfig.hpp>

@@ -4,7 +4,6 @@
 #include "inexor/gluegen/tree.hpp"
 #include "inexor/gluegen/parse_helpers.hpp"
 #include "inexor/gluegen/parse_sharedoption.hpp"
-#include "inexor/gluegen/parse_sharedfunc.hpp"
 
 #include <boost/algorithm/string.hpp>
 
