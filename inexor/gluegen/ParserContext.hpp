@@ -6,7 +6,6 @@
 #include <vector>
 #include <string>
 
-#include "inexor/gluegen/parse_sharedfunc.hpp"
 #include "inexor/filesystem/path.hpp"
 #include "inexor/gluegen/parse_sharedoption.hpp"
 #include "inexor/gluegen/tree.hpp"
