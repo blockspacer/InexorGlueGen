@@ -20,15 +20,9 @@ using std::vector;
 
 void usage(const std::string &ex, const po::options_description &params) {
     std::cerr
-        << "Inexor gluegen       Generates the glue code for the tree API."
-        << "\n\nEXAMPLES"
-        << "\n\n  (1) " << ex << " --help"
-        << "\n\n  (2) " << ex << " --out-proto FILE --out-cpp FILE --template-proto FILE --template-cpp FILE --namespace NAMESPACE --XML-AST-folder PATH"
-        << "\n\n\nDESCRIPTION"
-        << "\n  (1) Show this help page"
-        << "\n  (2) Generate the glue code."
-        << "\n      Note: Options are order independent, so the position of the arguments do not matter."
-        << "\n\n\n" << params << "\n";
+        << "Inexor GlueGen       Codegenerator which takes an AST produced by Doxygen, finds marked variables \"
+                "and generates arbitrary code based on it.\n\n\n\"
+        << params << "\n";
 }
 
 
@@ -44,12 +38,17 @@ int main(int argc, const char **argv)
     po::options_description params("PARAMETERS");
     params.add_options()
         ("help", "Print this help message")
-        ("namespace", po::value<string>()->required(), "The namespace to use in the generated protocol file and c++ source files. (use C++ :: notation)")
-        ("out-proto", po::value<string>()->required(), "The .proto file to write the protocol description to.")
-        ("out-cpp", po::value<string>()->required(), "The header `.hpp` file the c++ tree adapter code should be generated in")
-        ("template-proto", po::value<string>()->required(), "The mustache template which gets used to render(generate) the .proto file")
-        ("template-cpp", po::value<string>()->required(), "The mustache template which gets used to render(generate) the '.hpp' header file")
-        ("XML-AST-folder", po::value<string>()->required(), "The folder containing the doxygen xml (AST) output. We scan those for Shared Declarations");
+        ("template_file", po::value<std::vector<std::string>>()->multitoken()->composing()->required(),
+             "XML file(s) which contain the sections \"partials\" and \"file\" which contain mustache template code.\n"
+             "Each entry in there is named.\n"
+             "The name of the entry in \"partials\" becomes the name of the partial.\n"
+             "The name of the \"file\" entry becomes the filename of the generated file.")
+        ("partial_file", po::value<std::vector<std::string>>()->multitoken()->composing()->required(),
+             "XML file(s) which contains a list with named entries.\n"
+             "The name of the entry becomes the name of a partial which will be available in each <template_file>.")
+
+        ("doxygen_AST_folder", po::value<string>()->required(), "The folder containing the doxygen xml (AST) output. \n"
+              "We scan those XML files for Shared Declarations");
 
     std::string exec{argv[0]};
 
@@ -75,12 +74,9 @@ int main(int argc, const char **argv)
         return 1;
     }
 
-    const string &ns_str = cli_config["namespace"].as<string>();
-    const string &proto_file = cli_config["out-proto"].as<string>();
-    const string &cpp_file = cli_config["out-cpp"].as<string>();
-    const string &cpp_template = cli_config["template-cpp"].as<string>();
-    const string &proto_template = cli_config["template-proto"].as<string>();
-    const string &xml_AST_file = cli_config["XML-AST-folder"].as<string>();
+    const vector<string> &template_files = cli_config["template_file"].as<vector<string>>();
+    const vector<string> &partial_files = cli_config["partial_file"].as<vector<string>>();
+    const string &xml_AST_file = cli_config["doxygen_AST_folder"].as<string>();
 
     // Read the list of variables
 
