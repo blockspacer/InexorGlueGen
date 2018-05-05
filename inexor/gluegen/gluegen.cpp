@@ -6,14 +6,14 @@
 
 #include <boost/program_options.hpp>
 
-#include "inexor/gluegen/tree.hpp"
+#include "inexor/gluegen/ASTs.hpp"
 #include "inexor/gluegen/parse_sourcecode.hpp"
-#include "inexor/gluegen/generate_files.hpp"
+#include "inexor/gluegen/render_files.hpp"
 #include "inexor/gluegen/fill_templatedata.hpp"
 #include "inexor/gluegen/ParserContext.hpp"
 
 
-using namespace inexor::rpc::gluegen;
+using namespace inexor::gluegen;
 namespace po = boost::program_options;
 using std::string;
 using std::vector;
@@ -43,7 +43,7 @@ int main(int argc, const char **argv)
              "Each entry in there is named.\n"
              "The name of the entry in \"partials\" becomes the name of the partial.\n"
              "The name of the \"file\" entry becomes the filename of the generated file.")
-        ("partial_file", po::value<std::vector<std::string>>()->multitoken()->composing()->required(),
+        ("partial_file", po::value<std::vector<std::string>>()->multitoken()->composing(),
              "XML file(s) which contains a list with named entries.\n"
              "The name of the entry becomes the name of a partial which will be available in each <template_file>.")
 
@@ -76,21 +76,107 @@ int main(int argc, const char **argv)
 
     const vector<string> &template_files = cli_config["template_file"].as<vector<string>>();
     const vector<string> &partial_files = cli_config["partial_file"].as<vector<string>>();
-    const string &xml_AST_file = cli_config["doxygen_AST_folder"].as<string>();
+    const string &xml_AST_folder = cli_config["doxygen_AST_folder"].as<string>();
+
+
+    ASTs code{xml_AST_folder};
+
+    shared_option_definitions = find_shared_option_definitions(code.option_xmls);
+
+    shared_var_occurences = find_shared_var_occurences(code.code_xmls, shared_option_definitions);
+
+    shared_var_type_names = get_shared_var_types(shared_var_occurences);
+    shared_var_type_definitions = find_class_definitions(shared_var_type_names, shared_option_definitions);
+
+    TemplateData template_base_data = data_printer(shared_var_occurences, shared_var_type_definitions, shared_option_definitions);
+
+    for(const string &file : partial_files)
+    {
+        for(entry : file_xml.entries){
+            template_base_data[entry.key] = render_template(entry.value, template_base_data);
+        }
+    }
+    for(const string &file : template_files)
+    {
+
+        const string &gen_file_content = render_template(file_xml["template"].value, template_base_data);
+        print_to_file(file_xml["filename"].value(), gen_file_content);
+    }
 
     // Read the list of variables
+// for each global var
+// - make the type accessible
+//     make accessible ==
+//       - generate two messages for each
+//          1. one_element_of_<class_name>[_<template_type>]
+//          2. every_element_of_<class_name>[_<template_type>]
+//       - generate two respective handle_message_<class_name>[_<template_type>] c functions
+//           - make it generically take as input a pointer to such a class (and a subindex)
+//       - generate a connect_<class_name>[_<template_type>]
+//       - save where it can be included
+//       - save the namespace of the type
+// - add an entry to "handle_global_var"
+// - add an entry to "global_var_msg"
+// - s
+// - take care that each incoming message gets handled
+/*
+.sub
+    ASTs = vector<class_name|file_name, AST)
 
-    ParserContext parserctx;
+  --- finder -->
 
-    find_shared_decls(xml_AST_file, parserctx); // fill the tree vector
+    definitions and global_variables
+        .sub
+            file_ASTs
+            -> find_global_var_occurences
+            global_var_occurences = tuple(string refid/type, name, string attached_options)
+            vector<global_var_occurences>
+        ..sub
+        .sub
+            class_ASTs
+            -> find_relevant_class_definitions
+            (relevant_?)class_definition = refid, class_name, elements (= vector<tuple<string name, string type_id/builtin_name)
+        ..sub
+        .sub
+            class_ASTs
+           -> find_shared_options
+            shared_option_definiton = refid, class_name, elements (= vector<tuple<string name, string type_id/builtin_name)
+        ..sub
 
-    TemplateData templdata = fill_templatedata(parserctx, ns_str);
+ // --- resolver --> not necessary
+ //   global_var_tree = vector<varname, type, subelement_tree>
 
-    // Write the protoc file
-    render_proto_file(proto_file, proto_template, templdata);
+  --- data_printer -->
+    template_data = tree<string> data
+..sub
+.sub
+    template =  xml (filename + partials (zu welchem template_data element jeweils mitspeichern) + file_template)
+    vector<template> file_templates
+..sub
 
-    // Write cpp files
-    render_cpp_tree_data(cpp_file, cpp_template, templdata);
+--- file_render -->
 
+generated_files
+
+// Problem mit der Darstellung:
+- Ich will meine Sachen "besser" ordnen als so. Andere Dateinamen z.b.
+- daten von davor und davor davor könnten beide in schritt gebraucht werden.
+
+// TODO:
+
+1. filenames ---
+2. data structures in files
+- was wird gesucht?
+- was ist mit options?---
+3. methodennamen + functional_classes (factories?)
+4. bugfixen
+*/
+// Later:
+//     Optimization:
+//       - if the type is already made accessible, skip it.
+//   - take care of saving the real typename when dealing with nested class definitions
+//         def x { def y };
+//         x::y a;
+//         x is not the namespace, but the containing class.
     return 0;
 }
