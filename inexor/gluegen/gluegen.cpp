@@ -7,7 +7,7 @@
 #include <boost/program_options.hpp>
 
 #include "inexor/gluegen/ASTs.hpp"
-#include "inexor/gluegen/parse_sourcecode.hpp"
+#include "inexor/gluegen/SharedAttributes.hpp"
 #include "inexor/gluegen/render_files.hpp"
 #include "inexor/gluegen/fill_templatedata.hpp"
 #include "inexor/gluegen/ParserContext.hpp"
@@ -81,17 +81,18 @@ int main(int argc, const char **argv)
 
     ASTs code{xml_AST_folder};
 
-    shared_option_definitions = find_shared_option_definitions(code.option_xmls); // SharedAttachments.cpp
+    // options definitions need to get parsed before anything else, since you look for them when parsing the vars/functions/classes..
+    auto shared_attribute_definitions = parse_shared_attribute_definitions(code.option_xmls);
 
-    shared_var_occurences = find_shared_var_occurences(code.code_xmls, shared_option_definitions); // SharedVars.cpp
+    shared_var_occurences = find_shared_var_occurences(code.code_xmls, shared_attribute_definitions); // SharedVars.cpp
 
     shared_var_type_names = get_shared_var_types(shared_var_occurences); // SharedVarDatatypes.cpp
-    shared_var_type_definitions = find_class_definitions(shared_var_type_names, shared_option_definitions);
+    shared_var_type_definitions = find_class_definitions(shared_var_type_names, shared_attribute_definitions);
 
     // add print functions to each type.
     TemplateData template_base_data = shared_var_occurences.print() +
                                         shared_var_type_definitions.print() +
-                                        shared_option_definitions.print();
+                                        shared_attachment_definitions.print();
 
     render_files(template_base_data, partial_files, template_files);
 
