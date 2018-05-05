@@ -81,27 +81,20 @@ int main(int argc, const char **argv)
 
     ASTs code{xml_AST_folder};
 
-    shared_option_definitions = find_shared_option_definitions(code.option_xmls);
+    shared_option_definitions = find_shared_option_definitions(code.option_xmls); // SharedAttachments.cpp
 
-    shared_var_occurences = find_shared_var_occurences(code.code_xmls, shared_option_definitions);
+    shared_var_occurences = find_shared_var_occurences(code.code_xmls, shared_option_definitions); // SharedVars.cpp
 
-    shared_var_type_names = get_shared_var_types(shared_var_occurences);
+    shared_var_type_names = get_shared_var_types(shared_var_occurences); // SharedVarDatatypes.cpp
     shared_var_type_definitions = find_class_definitions(shared_var_type_names, shared_option_definitions);
 
-    TemplateData template_base_data = data_printer(shared_var_occurences, shared_var_type_definitions, shared_option_definitions);
+    // add print functions to each type.
+    TemplateData template_base_data = shared_var_occurences.print() +
+                                        shared_var_type_definitions.print() +
+                                        shared_option_definitions.print();
 
-    for(const string &file : partial_files)
-    {
-        for(entry : file_xml.entries){
-            template_base_data[entry.key] = render_template(entry.value, template_base_data);
-        }
-    }
-    for(const string &file : template_files)
-    {
+    render_files(template_base_data, partial_files, template_files);
 
-        const string &gen_file_content = render_template(file_xml["template"].value, template_base_data);
-        print_to_file(file_xml["filename"].value(), gen_file_content);
-    }
 
     // Read the list of variables
 // for each global var
@@ -161,6 +154,9 @@ generated_files
 // Problem mit der Darstellung:
 - Ich will meine Sachen "besser" ordnen als so. Andere Dateinamen z.b.
 - daten von davor und davor davor könnten beide in schritt gebraucht werden.
+
+-> Prozessablauf (Datenflow) wird zu Codestruktur indem man ähnliche Sachen gruppiert.
+ALso nicht Finder.cpp(find_sharedvars, find_typedefinitions), sondern typedefinitions.find()
 
 // TODO:
 
