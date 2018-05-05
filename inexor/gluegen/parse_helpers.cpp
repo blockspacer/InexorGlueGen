@@ -126,7 +126,7 @@ void remove_surrounding_brackets(std::string &str)
     remove_surrounding_char(str, '(');
 }
 
-string parse_bracket(string input, string &before_bracket, string &after_bracket)
+string parse_bracket(const string &input, string &before_bracket, string &after_bracket)
 {
     size_t len = input.size();
 

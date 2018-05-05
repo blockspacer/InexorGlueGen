@@ -45,7 +45,8 @@ extern std::vector<std::string> tokenize_arg_list(const std::string input);
 
 /// Splits a "something(totally(but pretty much ) stupid)great" into "something" "totally(but pretty much ) stupid" and "great".
 /// Its greedy meaning that the first full bracket will be matched to the result, everything else goes into after_bracket.
-extern std::string parse_bracket(std::string input, std::string &before_bracket, std::string &after_bracket);
+/// Returns the middle part, the rest lands in before_bracket and in after_bracket.
+extern std::string parse_bracket(const std::string &input, std::string &before_bracket, std::string &after_bracket);
 
 
 /// Text can have subfields with more text + siblings text, usually you want all of them concatenated.
