@@ -1,5 +1,8 @@
 #pragma once
 
+#include <pugiconfig.hpp>
+#include <pugixml.hpp>
+
 #include <string>
 #include <vector>
 

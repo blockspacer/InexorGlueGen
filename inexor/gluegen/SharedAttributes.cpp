@@ -1,13 +1,13 @@
-#include "inexor/gluegen/parse_helpers.hpp"
-#include "inexor/gluegen/fill_templatedata.hpp"
-#include "inexor/gluegen/tree.hpp"
-#include "inexor/gluegen/ParserContext.hpp"
+
+#include "inexor/gluegen/SharedAttributes.hpp"
+
+#include <pugiconfig.hpp>
+#include <pugixml.hpp>
 
 #include <boost/algorithm/string.hpp>
 
 #include <vector>
 #include <string>
-#include <unordered_set>
 
 using namespace std;
 
