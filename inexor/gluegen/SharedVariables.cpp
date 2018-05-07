@@ -1,17 +1,69 @@
 
 #include "inexor/gluegen/SharedVariables.hpp"
+#include "inexor/gluegen/parse_helpers.hpp"
 
 #include <pugiconfig.hpp>
 #include <pugixml.hpp>
 
 
+using namespace pugi;
 
 namespace inexor { namespace gluegen {
 
+/// Returns true if this node is marked to be shared.
+bool is_marked_variable(const xml_node &member_xml)
+{
+    return contains(get_complete_xml_text(member_xml.child("type")), "SharedVar<");
+}
 
+string get_namespace_of_namespace_file(const xml_node compound_xml)
+{
+    bool isnamespacefile = string(compound_xml.attribute("kind").value()) == "namespace";
+    return isnamespacefile ? get_complete_xml_text(compound_xml.child("compoundname")) : "";
+}
+
+/// Takes xml variable nodes and returns a new SharedVar according to it.
+SharedVariable new_shared_var(const xml_node &var_xml, const string var_namespace)
+{
+    const string type = get_complete_xml_text(var_xml.child("type"));
+    const string name = get_complete_xml_text(var_xml.child("name"));
+    string initializer = get_complete_xml_text(var_xml.child("initializer"));
+    string dummy;
+    string attributes_literal = parse_bracket(initializer, dummy, dummy);
+    return SharedVariable{type, name, var_namespace, attributes_literal};
+}
+
+/// Find all marked shared vars inside a given document AST.
 const std::vector<SharedVariable> find_shared_var_occurences(const std::unique_ptr<pugi::xml_document> AST_xml)
 {
+    // doxygens AST for cpp files is roughly (in xml format):
+    // doxygen
+    //   compound
+    //     section("func")
+    //       member
+    //       member..
+    //     section("var")
+    //     section("define")..
+    const xml_node compound_xml = xml->child("doxygen").child("compounddef"); //[@kind='file' and @language='C++']");
+    std::vector<SharedVariable> buf;
 
+    // all vars in one xml file are in the same ns, thanks doxygen.
+    const string ns_of_vars = get_namespace_of_namespace_file(AST_xml->child("doxygen").child("compounddef"));
+
+    for(const auto &section : compound_xml.children("sectiondef"))
+    {
+        if(string(section.attribute("kind").value()) == "var"
+           || string(section.attribute("kind").value()) == "func") // sometimes accessing constructors gets mistakenly recognized as function
+        {
+            for(const auto &member : section.children("memberdef"))
+            {
+                if(is_marked_variable()) {
+                    buf += new_shared_var(member_xml, ns_of_vars);
+                }
+            }
+        }
+    }
+    return buf;
 }
 
 const std::vector<SharedVariable> find_shared_var_occurences(const std::vector<std::unique_ptr<pugi::xml_document>> AST_code_xmls)
@@ -26,12 +78,11 @@ const std::vector<std::string> get_shared_var_types(const std::vector<SharedVari
 {
     std::vector<std::string> buf;
     for(auto &var : all_sharedvars)
-    {
-        buf
-    }
+        buf.push_back(var.type);
+    return buf;
 }
 
-        // -------------------------------
+// -------------------------------
 /// Adds the entries namespace_sep_{open|close} to the templatedata given.
 /// open is e.g. "namespace inexor { namespace rendering {" close is "} }"
 void add_namespace_seps_templatedata(TemplateData &templdata, string ns_str)
