@@ -23,14 +23,13 @@ string get_namespace_of_namespace_file(const xml_node compound_xml)
 }
 
 /// Takes xml variable nodes and returns a new SharedVar according to it.
-SharedVariable new_shared_var(const xml_node &var_xml, const string var_namespace)
+SharedVariable::SharedVariable(const xml_node &var_xml, const string &var_namespace) :
+        type(get_complete_xml_text(var_xml.child("type"))),
+        name(get_complete_xml_text(var_xml.child("name")))
 {
-    const string type = get_complete_xml_text(var_xml.child("type"));
-    const string name = get_complete_xml_text(var_xml.child("name"));
     string initializer = get_complete_xml_text(var_xml.child("initializer"));
     string dummy;
-    string attributes_literal = parse_bracket(initializer, dummy, dummy);
-    return SharedVariable{type, name, var_namespace, attributes_literal};
+    attached_attributes_literal = parse_bracket(initializer, dummy, dummy);
 }
 
 /// Find all marked shared vars inside a given document AST.
@@ -44,11 +43,12 @@ const std::vector<SharedVariable> find_shared_var_occurences(const std::unique_p
     //       member..
     //     section("var")
     //     section("define")..
-    const xml_node compound_xml = xml->child("doxygen").child("compounddef"); //[@kind='file' and @language='C++']");
     std::vector<SharedVariable> buf;
 
+    const xml_node compound_xml = AST_xml->child("doxygen").child("compounddef");
+
     // all vars in one xml file are in the same ns, thanks doxygen.
-    const string ns_of_vars = get_namespace_of_namespace_file(AST_xml->child("doxygen").child("compounddef"));
+    const string ns_of_vars = get_namespace_of_namespace_file(compound_xml);
 
     for(const auto &section : compound_xml.children("sectiondef"))
     {
@@ -58,7 +58,7 @@ const std::vector<SharedVariable> find_shared_var_occurences(const std::unique_p
             for(const auto &member : section.children("memberdef"))
             {
                 if(is_marked_variable()) {
-                    buf += new_shared_var(member_xml, ns_of_vars);
+                    buf.push_back(SharedVariable{member_xml, ns_of_vars});
                 }
             }
         }
@@ -69,7 +69,7 @@ const std::vector<SharedVariable> find_shared_var_occurences(const std::unique_p
 const std::vector<SharedVariable> find_shared_var_occurences(const std::vector<std::unique_ptr<pugi::xml_document>> AST_code_xmls)
 {
     std::vector<SharedVariable> buf;
-    for(auto &fileast : AST_code_xmls)
+    for(const auto &fileast : AST_code_xmls)
         buf += find_shared_var_occurences(fileast);
     return buf;
 }
@@ -77,7 +77,7 @@ const std::vector<SharedVariable> find_shared_var_occurences(const std::vector<s
 const std::vector<std::string> get_shared_var_types(const std::vector<SharedVariable> all_sharedvars)
 {
     std::vector<std::string> buf;
-    for(auto &var : all_sharedvars)
+    for(const auto &var : all_sharedvars)
         buf.push_back(var.type);
     return buf;
 }

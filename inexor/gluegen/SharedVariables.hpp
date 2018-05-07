@@ -44,6 +44,9 @@ class SharedVariable
     /// So this allocates all children again on the heap.
   //  SharedVariable(const SharedVariable &old);
 
+
+    /// Constructs a new SharedVar after parsing a xml variable node.
+    SharedVariable(const pugi::xml_node &var_xml, const std::string &var_namespace);
 };
 
 /// Find all marked global variables inside a bunch of AST xml files (as spit out by doxygen) and save them in a vector.
@@ -51,4 +54,8 @@ extern const std::vector<SharedVariable> find_shared_var_occurences(const std::v
 
 /// Return the type literal, given a bunch of SharedVariables (possibly with duplicate types).
 extern const std::vector<std::string> get_shared_var_types(const std::vector<SharedVariable> all_sharedvars);
+
+/// Returns true if this node is marked to be shared.
+extern bool is_marked_variable(const pugi::xml_node &member_xml);
+
 } } // namespace inexor::gluegen
