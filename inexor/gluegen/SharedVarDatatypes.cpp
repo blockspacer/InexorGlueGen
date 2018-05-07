@@ -1,10 +1,63 @@
 #include "inexor/gluegen/SharedVarDatatypes.hpp"
+#include "inexor/gluegen/SharedVariables.hpp"
+#include "inexor/gluegen/parse_helpers.hpp"
 
 #include <vector>
 #include <string>
 
+using namespace pugi;
+using namespace std;
+
 namespace inexor { namespace gluegen {
 
+shared_class_definition new_shared_class_definition(const xml_node &compound_xml)
+{
+    shared_class_definition def;
+
+    def->refid = compound_xml.attribute("id").value();
+    string full_name =  get_complete_xml_text(compound_xml.child("compoundname")); // includes the namespace e.g. inexor::rendering::screen
+
+    vector<string> ns_and_name(split_by_delimiter(full_name, "::"));
+
+    def->class_name = ns_and_name.back();
+    ns_and_name.pop_back();
+    def->definition_namespace = join(ns_and_name, "::");
+    def->definition_header = compound_xml.child("location").attribute("file").value();
+
+    if(contains(def->definition_header, ".c"))
+    {
+        std::cerr << "ERROR: SharedClasses can only be defined in cleanly include-able **header**-files"
+                  << std::endl << "Class in question is " << full_name << std::endl;
+        std::exit(1);
+    }
+
+    for(const xml_node &var_xml : find_class_member_vars(compound_xml))
+    {
+        string type = get_complete_xml_text(var_xml.child("type"));
+        if(is_marked_variable(var_xml))
+            def.elements.push_back(SharedVariable{var_xml});
+    }
+    return def;
+}
+
+/// Return true if this class' name is contained in the shared_var_type_literals hashset.
+bool is_relevant_class(const xml_node &compound_xml)
+{
+
+}
+std::vector<shared_class_definition>
+        find_class_definitions(const std::vector<std::unique_ptr<pugi::xml_document>> AST_class_xmls,
+                                const std::vector<std::string> shared_var_type_literals)
+{
+    std::vector<shared_class_definition> buf;
+    for(const auto &class_xml : AST_class_xmls)
+    {
+        const xml_node &compound_xml = class_xml->child("doxygen").child("compounddef");
+        if(is_relevant_class(compound_xml))
+            buf.push_back(new_shared_class_definition(compound_xml));
+    }
+    return buf;
+}
 
 /// Create a shared class definition which the
 /// \param def
