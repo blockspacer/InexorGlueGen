@@ -2,6 +2,8 @@
 #include "inexor/gluegen/SharedVariables.hpp"
 #include "inexor/gluegen/parse_helpers.hpp"
 
+#include <kainjow/mustache.hpp>
+
 #include <vector>
 #include <string>
 #include <hash_set>
@@ -72,14 +74,15 @@ std::vector<shared_class_definition>
     return buf;
 }
 
+using namespace kainjow;
 /// Create a shared class definition which the
 /// \param def
 /// \param ctx
 /// \param add_instances
 /// \return
-TemplateData get_shared_class_templatedata(shared_class_definition *def, ParserContext &ctx, bool add_instances = true)
+mustache::data get_shared_class_templatedata(const shared_class_definition &def, ParserContext &ctx, bool add_instances = true)
 {
-    TemplateData cur_definition{TemplateData::type::object};
+    mustache::data cur_definition{mustache::data::type::object};
     // The class needs to be defined in a cleanly includeable header file.
     cur_definition.set("definition_header_file", def->containing_header);
 
@@ -90,11 +93,11 @@ TemplateData get_shared_class_templatedata(shared_class_definition *def, ParserC
 
     add_options_templatedata(cur_definition, def->attached_options, ctx);
 
-    TemplateData all_instances{TemplateData::type::list};
+    mustache::data all_instances{mustache::data::type::list};
 
     if(add_instances) for(ShTreeNode *inst_node : def->instances)
         {
-            TemplateData cur_instance{TemplateData::type::object};
+            mustache::data cur_instance{mustache::data::type::object};
             add_namespace_seps_templatedata(cur_instance, inst_node->get_namespace());
 
             // The first parents name, e.g. of inexor::game::player1.weapons.ammo its player1.
@@ -107,7 +110,7 @@ TemplateData get_shared_class_templatedata(shared_class_definition *def, ParserC
             // were doing this for sharedlists, where the first template is relevant.
             if(inst_node->template_type_definition)
             {
-                TemplateData dummy_list(TemplateData::type::list);
+                mustache::data dummy_list(mustache::data::type::list);
                 dummy_list << get_shared_class_templatedata(inst_node->template_type_definition, ctx, false);
                 cur_instance.set("first_template_type", std::move(dummy_list));
             }
@@ -118,7 +121,7 @@ TemplateData get_shared_class_templatedata(shared_class_definition *def, ParserC
         }
     cur_definition.set("instances", all_instances);
 
-    TemplateData members{TemplateData::type::list};
+    mustache::data members{mustache::data::type::list};
 
     int local_index = 2;
     for(ShTreeNode *child : def->nodes)
@@ -128,5 +131,16 @@ TemplateData get_shared_class_templatedata(shared_class_definition *def, ParserC
     cur_definition.set("members", members);
     return cur_definition;
 }
+mustache::data print_shared_var_type_definitions(std::vector<shared_class_definition> &shared_var_type_definitions,
+                                                 shared_attribute_definitions)
+{
+    mustache::data sharedclasses{mustache::data::type::list};
 
+    for(const auto &class_def : shared_var_type_definitions)
+    {
+        sharedclasses << get_shared_class_templatedata(class_def_it.second, data);
+    }
+    return sharedclasses;
+
+}
 } } // namespace inexor::gluegen
