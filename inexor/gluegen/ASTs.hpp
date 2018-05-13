@@ -7,7 +7,6 @@
 
 #include <string>
 #include <vector>
-#include <unordered_map>
 
 namespace inexor {
 namespace gluegen {
@@ -32,8 +31,7 @@ namespace gluegen {
 /// Class containing all xml files (and filenames)
 ///
 /// The .xml files contain doxygen generated ASTs (Abstract Syntax Trees)
-/// There are two types of such xml files: one for source files, one for class definitions.
-
+/// Doxygen knows two types of such xml files: xml-files for source files, xml-files for class definitions.
 struct ASTs
 {
     typedef inexor::filesystem::Path Path;
@@ -41,12 +39,10 @@ struct ASTs
 
 
     /// In case the class xml is a shared option definition, it will be saved in here.
-    /// Key: name of the class, value: the class AST xml file.
-    std::unordered_map<std::string, xml_document_ptr> option_xmls;
+    std::vector<xml_document_ptr> attribute_class_xmls;
 
-    /// In case the class xml is not a shared option definition, it will be saved in here, together with the refid of the class.
-    /// Key: refid of the class, value: the class AST xml file.
-    std::unordered_map<std::string, xml_document_ptr> class_xmls;
+    /// In case the class xml is not a shared option definition, it will be saved in here.
+    std::vector<xml_document_ptr> class_xmls;
 
     /// The xml files containing the ASTs of all source code files.
     std::vector<xml_document_ptr> code_xmls;
