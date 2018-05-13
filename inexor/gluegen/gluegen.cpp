@@ -1,22 +1,26 @@
+
+#include "inexor/gluegen/ASTs.hpp"
+#include "inexor/gluegen/render_files.hpp"
+#include "inexor/gluegen/SharedAttributes.hpp"
+#include "inexor/gluegen/SharedVariables.hpp"
+#include "inexor/gluegen/SharedVarDatatypes.hpp"
+
+#include <boost/program_options.hpp>
+
+#include <kainjow/mustache.hpp>
+
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <algorithm>
 #include <vector>
 
-#include <boost/program_options.hpp>
-
-#include "inexor/gluegen/ASTs.hpp"
-#include "inexor/gluegen/SharedAttributes.hpp"
-#include "inexor/gluegen/render_files.hpp"
-#include "inexor/gluegen/SharedVariables.hpp"
-#include "inexor/gluegen/SharedVarDatatypes.hpp"
-
 
 using namespace inexor::gluegen;
 namespace po = boost::program_options;
 using std::string;
 using std::vector;
+using namespace kainjow;
 
 void usage(const std::string &ex, const po::options_description &params) {
     std::cerr
@@ -90,8 +94,12 @@ int main(int argc, const char **argv)
     auto shared_var_type_definitions = find_class_definitions(code.class_xmls, shared_var_type_names);
 
     // add print functions to each type.
-    TemplateData template_base_data = shared_var_occurences.print(shared_attribute_definitions) +
-                                        shared_var_type_definitions.print(shared_attribute_definitions);
+    mustache::data template_base_data{mustache::data::type::object};
+    template_base_data.set("type_definitions", print_shared_var_type_definitions(shared_var_type_definitions, shared_attribute_definitions));
+    template_base_data.set("variables", print_shared_var_occurences(shared_var_occurences, shared_attribute_definitions));
+    
+    template_base_data.set("file_comment", "// This file gets generated!\n"
+            "// Do not modify it directly but its corresponding template file instead!");
 
     render_files(template_base_data, partial_files, template_files);
 

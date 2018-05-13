@@ -2,11 +2,14 @@
 #include "inexor/gluegen/SharedVariables.hpp"
 #include "inexor/gluegen/parse_helpers.hpp"
 
+#include <kainjow/mustache.hpp>
+
 #include <pugiconfig.hpp>
 #include <pugixml.hpp>
 
 
 using namespace pugi;
+using namespace kainjow;
 
 namespace inexor { namespace gluegen {
 
@@ -83,13 +86,14 @@ const std::vector<std::string> get_shared_var_types(const std::vector<SharedVari
 }
 
 // -------------------------------
+using namespace kainjow;
 /// Adds the entries namespace_sep_{open|close} to the templatedata given.
 /// open is e.g. "namespace inexor { namespace rendering {" close is "} }"
-void add_namespace_seps_templatedata(TemplateData &templdata, string ns_str)
+void add_namespace_seps_templatedata(mustache::data &templdata, string ns_str)
 {
     vector<string> ns(split_by_delimiter(ns_str, "::"));
 
-    TemplateData namespace_sep_open{kainjow::mustache::lambda{
+    mustache::data namespace_sep_open{kainjow::mustache::lambda{
         [ns](const string&)
     {
         std::stringstream ss;
@@ -103,7 +107,7 @@ void add_namespace_seps_templatedata(TemplateData &templdata, string ns_str)
         return ss.str();
     }}};
 
-    TemplateData namespace_sep_close{kainjow::mustache::lambda{
+    mustache::data namespace_sep_close{kainjow::mustache::lambda{
         [ns](const std::string&)
     {
         std::stringstream ss;
@@ -118,9 +122,16 @@ void add_namespace_seps_templatedata(TemplateData &templdata, string ns_str)
     templdata.set("namespace_sep_open", namespace_sep_open);
     templdata.set("namespace_sep_close", namespace_sep_close);
 }
+/*
+TODO:
+partial instead:
+"namespace_sep_open": "{{#namespace}}{{name}} { {{/namespace}}"
+"namespace_sep_close": "{{#namespace}} } {{/namespace}}"
+"full_name": "{{#namespace}}{{.}}::{{/namespace}}{{name}}"
+ */
 
 /// Index is a very special data entry: every time it gets referenced it gets iterated!
-kainjow::mustache::partial get_index_incrementer(bool reset = false)
+mustache::partial get_index_incrementer(bool reset = false)
 {
     return kainjow::mustache::partial([reset]() {
         static int count = 21;
@@ -131,14 +142,14 @@ kainjow::mustache::partial get_index_incrementer(bool reset = false)
 
 /// @param local_index if this is different from -1 we set "local_index" with it.
 ///        otherwise we use the tree_event index counter.. @see add_event_index_templatedata
-TemplateData get_shared_var_templatedata(const ShTreeNode &node, int local_index, ParserContext &data)
+mustache::data get_shared_var_templatedata(const ShTreeNode &node, int local_index, ParserContext &data)
 {
-    TemplateData curvariable{TemplateData::type::object};
+    mustache::data curvariable{mustache::data::type::object};
     // These is a hacky way to distinct between these in pure-data form.. TODO embedd logic in template?
-    curvariable.set("is_int", node.type == node.type ? TemplateData::type::bool_true : TemplateData::type::bool_false);
-    curvariable.set("is_float", node.get_type_numeric()== node.t_float ? TemplateData::type::bool_true : TemplateData::type::bool_false);
-    curvariable.set("is_string", node.get_type_numeric()== node.t_cstring ? TemplateData::type::bool_true : TemplateData::type::bool_false);
-    curvariable.set("is_class", node.node_type==ShTreeNode::NODE_CLASS_VAR ? TemplateData::type::bool_false : TemplateData::type::bool_true);
+    curvariable.set("is_int", node.type == node.type ? mustache::data::type::bool_true : mustache::data::type::bool_false);
+    curvariable.set("is_float", node.get_type_numeric()== node.t_float ? mustache::data::type::bool_true : mustache::data::type::bool_false);
+    curvariable.set("is_string", node.get_type_numeric()== node.t_cstring ? mustache::data::type::bool_true : mustache::data::type::bool_false);
+    curvariable.set("is_class", node.node_type==ShTreeNode::NODE_CLASS_VAR ? mustache::data::type::bool_false : mustache::data::type::bool_true);
 
 
     if(local_index>0) curvariable.set("local_index", std::to_string(local_index));
@@ -154,16 +165,16 @@ TemplateData get_shared_var_templatedata(const ShTreeNode &node, int local_index
     return curvariable;
 }
 
-TemplateData fill_templatedata(ParserContext &data)
+mustache::data fill_templatedata(ParserContext &data)
 {
-    TemplateData tmpldata{TemplateData::type::object};
+    mustache::data tmpldata{mustache::data::type::object};
 
     tmpldata.set("file_comment", "// This file gets generated!\n"
                  "// Do not modify it directly but its corresponding template file instead!");
 
     tmpldata.set("index_reset", get_index_incrementer(true)); // This design is so fucked up.. mustache forces us to though.
 
-    TemplateData sharedvars{TemplateData::type::list};
+    mustache::data sharedvars{mustache::data::type::list};
 
     for(ShTreeNode *node : data.instances)
     {
@@ -171,7 +182,7 @@ TemplateData fill_templatedata(ParserContext &data)
     }
     tmpldata.set("shared_vars", sharedvars);
 
-    TemplateData sharedclasses{TemplateData::type::list};
+    mustache::data sharedclasses{mustache::data::type::list};
 
     for(auto class_def_it : data.shared_class_definitions)
     {
@@ -181,5 +192,16 @@ TemplateData fill_templatedata(ParserContext &data)
 
     return tmpldata;
 }
+        
+kainjow::mustache::data print_shared_var_occurences(const std::vector<SharedVariable> &shared_var_occurences,
+                                                            shared_attribute_definitions)
+{
+    mustache::data sharedvars{mustache::data::type::list};
 
+    for(const auto &shared_var : shared_var_occurences)
+    {
+        sharedvars << get_shared_var_templatedata(*node, -1, data);
+    }
+    return sharedvars;
+}
 } } // namespace inexor::gluegen

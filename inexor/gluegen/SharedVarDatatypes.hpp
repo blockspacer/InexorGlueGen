@@ -2,6 +2,8 @@
 
 #include "inexor/gluegen/SharedVariables.hpp"
 
+#include <kainjow/mustache.hpp>
+
 #include <vector>
 #include <string>
 
