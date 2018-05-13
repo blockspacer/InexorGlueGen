@@ -4,6 +4,7 @@
 
 #include <vector>
 #include <string>
+#include <hash_set>
 
 using namespace pugi;
 using namespace std;
@@ -41,13 +42,25 @@ shared_class_definition new_shared_class_definition(const xml_node &compound_xml
 }
 
 /// Return true if this class' name is contained in the shared_var_type_literals hashset.
-bool is_relevant_class(const xml_node &compound_xml)
+bool is_relevant_class(const xml_node &compound_xml, const std::set<std::string> &relevant_classes)
 {
-
+    // TODO control case that both are in the same namespace or not.
+    if(relevant_classes.find(get_complete_xml_text(compound_xml.child("compoundname"))))
+        return true;
+    return false;
 }
+
+const std::set<std::string> shared_var_type_literals(const std::vector<std::string> &class_vec)
+{
+    std::set<std::string> buf;
+    for(const string &c : class_vec)
+        buf.emplace(c);
+    return buf;
+}
+
 std::vector<shared_class_definition>
-        find_class_definitions(const std::vector<std::unique_ptr<pugi::xml_document>> AST_class_xmls,
-                                const std::vector<std::string> shared_var_type_literals)
+        find_class_definitions(const std::vector<std::unique_ptr<pugi::xml_document>> &AST_class_xmls,
+                                const std::vector<std::string> &shared_var_type_literals)
 {
     std::vector<shared_class_definition> buf;
     for(const auto &class_xml : AST_class_xmls)
