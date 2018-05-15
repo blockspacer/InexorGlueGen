@@ -131,8 +131,8 @@ mustache::data get_shared_class_templatedata(const shared_class_definition &def,
     cur_definition.set("members", members);
     return cur_definition;
 }
-mustache::data print_shared_var_type_definitions(std::vector<shared_class_definition> &shared_var_type_definitions,
-                                                 shared_attribute_definitions)
+mustache::data print_shared_var_type_definitions(std::vector<shared_class_definition> &shared_var_type_definitions)
+                                                //, shared_attribute_definitions)
 {
     mustache::data sharedclasses{mustache::data::type::list};
 

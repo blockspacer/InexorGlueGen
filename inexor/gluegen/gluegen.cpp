@@ -86,7 +86,7 @@ int main(int argc, const char **argv)
     ASTs code{xml_AST_folder};
 
     // options definitions need to get parsed before anything else, since you look for them when parsing the vars/functions/classes..
-    auto shared_attribute_definitions = parse_shared_attribute_definitions(code.attribute_class_xmls);
+// auto shared_attribute_definitions = parse_shared_attribute_definitions(code.attribute_class_xmls);
 
     auto shared_var_occurences = find_shared_var_occurences(code.code_xmls);
 
@@ -95,9 +95,9 @@ int main(int argc, const char **argv)
 
     // add print functions to each type.
     mustache::data template_base_data{mustache::data::type::object};
-    template_base_data.set("type_definitions", print_shared_var_type_definitions(shared_var_type_definitions, shared_attribute_definitions));
-    template_base_data.set("variables", print_shared_var_occurences(shared_var_occurences, shared_attribute_definitions));
-    
+    template_base_data.set("type_definitions", print_shared_var_type_definitions(shared_var_type_definitions); //, shared_attribute_definitions));
+    template_base_data.set("variables", print_shared_var_occurences(shared_var_occurences);//, shared_attribute_definitions));
+
     template_base_data.set("file_comment", "// This file gets generated!\n"
             "// Do not modify it directly but its corresponding template file instead!");
 
@@ -166,6 +166,16 @@ generated_files
 -> Prozessablauf (Datenflow) wird zu Codestruktur indem man ähnliche Sachen gruppiert.
 ALso nicht Finder.cpp(find_sharedvars, find_typedefinitions), sondern typedefinitions.find()
 
+////
+Problembeschreibung:
+Use cases -> Requirements        == Erkenntnisgewinn ==>
+Implementation:
+Dataflow ->
+partitions                       == Refinement/Refactoring(establishing patterns) ==>
+
+partition data flow, partition specific use case ->
+search for similar use cases ->
+generalization + putting adapters in place
 // TODO:
 
 1. filenames ---

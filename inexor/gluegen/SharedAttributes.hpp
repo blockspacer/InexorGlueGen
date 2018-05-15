@@ -16,11 +16,16 @@ struct name_defaultvalue_tupel
 };
 typedef std::vector<name_defaultvalue_tupel> name_defaultvalue_vector;
 
-/// A declaration of a class with a "SharedVarAttachement" parent class.
+/// A declaration of a class with a "SharedVarAttribute" parent class.
 ///
-/// To make our glue code generation more flexible we invented Shared Var Attachement classes,
-/// which contain info about how to render stuff and which are used in the C++ Tree API.
-/// i.e. Range(), Persistent(), CustomPath()..
+/// To make our glue code generation more flexible we invented SharedVarAttribute.
+/// Instances of those SharedVarAttribute classes can be used when creating a SharedVar.
+/// A SharedVarAttribute contains template data, which can extend the information of the variable it gets attached to.
+/// The initializer of any member with "static constexpr char *" type is a template itself and will be rendered into a string.
+/// The string will be available inside the templatedata of the variable using
+/// 1. the name of the entry of that
+/// Fs
+/// examples Range(0, 2), Persistent(), CustomPath()..
 ///
 /// class xy : SharedVarAttachement {
 ///     xy(T <paramname> = <paramdefvalue>, S <param2name> = <param2defvalue>, ......) {}

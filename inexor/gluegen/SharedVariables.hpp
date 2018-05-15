@@ -60,7 +60,7 @@ extern const std::vector<std::string> get_shared_var_types(const std::vector<Sha
 /// Returns true if this node is marked to be shared.
 extern bool is_marked_variable(const pugi::xml_node &member_xml);
 
-extern kainjow::mustache::data print_shared_var_occurences(const std::vector<SharedVariable> &shared_var_occurences,
-                                                           shared_attribute_definitions);
+extern kainjow::mustache::data print_shared_var_occurences(const std::vector<SharedVariable> &shared_var_occurences);
+        //shared_attribute_definitions);
 // Problem: an der stelle nicht attribute definitions inkludieren wollen, aber müssen um jeweils alle attachten attributes zu printen
 } } // namespace inexor::gluegen

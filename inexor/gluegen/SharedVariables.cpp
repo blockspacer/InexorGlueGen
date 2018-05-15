@@ -124,10 +124,22 @@ void add_namespace_seps_templatedata(mustache::data &templdata, string ns_str)
 }
 /*
 TODO:
+
 partial instead:
 "namespace_sep_open": "{{#namespace}}{{name}} { {{/namespace}}"
 "namespace_sep_close": "{{#namespace}} } {{/namespace}}"
 "full_name": "{{#namespace}}{{.}}::{{/namespace}}{{name}}"
+"path": "
+"name_unique"
+
+first:
+  str name, list namespace, string full_type
+  char *: SharedVar<char *> is_sharedvar. member: is_cstring
+  int: SharedVar<int> important: inner, ignored: outer
+  list: SharedList<vector> important: outer, ignored: inner
+  list: SharedList<list>
+  map: SharedMap<map>
+  map: SharedMap<unordered_map>
  */
 
 /// Index is a very special data entry: every time it gets referenced it gets iterated!
@@ -140,61 +152,32 @@ mustache::partial get_index_incrementer(bool reset = false)
     });
 }
 
-/// @param local_index if this is different from -1 we set "local_index" with it.
-///        otherwise we use the tree_event index counter.. @see add_event_index_templatedata
-mustache::data get_shared_var_templatedata(const ShTreeNode &node, int local_index, ParserContext &data)
+mustache::data get_shared_var_templatedata(const SharedVariable &var, ParserContext &data)
 {
     mustache::data curvariable{mustache::data::type::object};
     // These is a hacky way to distinct between these in pure-data form.. TODO embedd logic in template?
-    curvariable.set("is_int", node.type == node.type ? mustache::data::type::bool_true : mustache::data::type::bool_false);
-    curvariable.set("is_float", node.get_type_numeric()== node.t_float ? mustache::data::type::bool_true : mustache::data::type::bool_false);
-    curvariable.set("is_string", node.get_type_numeric()== node.t_cstring ? mustache::data::type::bool_true : mustache::data::type::bool_false);
-    curvariable.set("is_class", node.node_type==ShTreeNode::NODE_CLASS_VAR ? mustache::data::type::bool_false : mustache::data::type::bool_true);
+//    curvariable.set("is_int", node.type == node.type ? mustache::data::type::bool_true : mustache::data::type::bool_false);
+//    curvariable.set("is_float", node.get_type_numeric()== node.t_float ? mustache::data::type::bool_true : mustache::data::type::bool_false);
+//    curvariable.set("is_string", node.get_type_numeric()== node.t_cstring ? mustache::data::type::bool_true : mustache::data::type::bool_false);
+//    curvariable.set("is_class", node.node_type==ShTreeNode::NODE_CLASS_VAR ? mustache::data::type::bool_false : mustache::data::type::bool_true);
+    //if(local_index>0) curvariable.set("local_index", std::to_string(local_index));
+//    curvariable.set("path", node.get_path());
+//    curvariable.set("name_unique", node.get_name_unique());
+//    curvariable.set("name_cpp_full", node.get_name_cpp_full());
+//    curvariable.set("name_cpp_short", node.get_name_cpp_short());
 
 
-    if(local_index>0) curvariable.set("local_index", std::to_string(local_index));
+    curvariable.set("var_namespace", mustache::data::type::list{var.var_namespace});
+    curvariable.set("var_name", var.name);
     curvariable.set("index", get_index_incrementer());
-    curvariable.set("path", node.get_path());
-    curvariable.set("name_unique", node.get_name_unique());
-    curvariable.set("name_cpp_full", node.get_name_cpp_full());
-    curvariable.set("name_cpp_short", node.get_name_cpp_short());
 
-    add_namespace_seps_templatedata(curvariable, node.get_namespace());
+  //  add_namespace_seps_templatedata(curvariable, node.get_namespace());
 
     add_options_templatedata(curvariable, node.attached_options, data);
     return curvariable;
 }
-
-mustache::data fill_templatedata(ParserContext &data)
-{
-    mustache::data tmpldata{mustache::data::type::object};
-
-    tmpldata.set("file_comment", "// This file gets generated!\n"
-                 "// Do not modify it directly but its corresponding template file instead!");
-
-    tmpldata.set("index_reset", get_index_incrementer(true)); // This design is so fucked up.. mustache forces us to though.
-
-    mustache::data sharedvars{mustache::data::type::list};
-
-    for(ShTreeNode *node : data.instances)
-    {
-        sharedvars << get_shared_var_templatedata(*node, -1, data);
-    }
-    tmpldata.set("shared_vars", sharedvars);
-
-    mustache::data sharedclasses{mustache::data::type::list};
-
-    for(auto class_def_it : data.shared_class_definitions)
-    {
-        sharedclasses << get_shared_class_templatedata(class_def_it.second, data);
-    }
-    tmpldata.set("shared_class_definitions", sharedclasses);
-
-    return tmpldata;
-}
         
-kainjow::mustache::data print_shared_var_occurences(const std::vector<SharedVariable> &shared_var_occurences,
-                                                            shared_attribute_definitions)
+kainjow::mustache::data print_shared_var_occurences(const std::vector<SharedVariable> &shared_var_occurences)
 {
     mustache::data sharedvars{mustache::data::type::list};
 

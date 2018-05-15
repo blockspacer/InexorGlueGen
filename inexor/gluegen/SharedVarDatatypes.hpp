@@ -38,6 +38,6 @@ extern std::vector<shared_class_definition>
         find_class_definitions(const std::vector<std::unique_ptr<pugi::xml_document>> &AST_class_xmls,
                                 const std::vector<std::string> &shared_var_type_literals);
 
-extern kainjow::mustache::data print_shared_var_type_definitions(std::vector<shared_class_definition> &shared_var_type_definitions,
-                                                          shared_attribute_definitions);
+extern kainjow::mustache::data print_shared_var_type_definitions(std::vector<shared_class_definition> &shared_var_type_definitions);
+                                                          //, shared_attribute_definitions);
 } } // namespace inexor::gluegen
