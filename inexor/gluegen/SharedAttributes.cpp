@@ -1,5 +1,6 @@
 
 #include "inexor/gluegen/SharedAttributes.hpp"
+#include "inexor/gluegen/parse_helpers.hpp"
 
 #include <pugiconfig.hpp>
 #include <pugixml.hpp>
@@ -8,8 +9,11 @@
 
 #include <vector>
 #include <string>
+#include <iostream>
 
 using namespace std;
+using namespace pugi;
+using namespace boost::algorithm;
 
 namespace inexor { namespace gluegen {
 
@@ -97,12 +101,13 @@ const attribute_definition parse_shared_attribute_definition(const xml_node &com
     return opt;
 }
 
-std::unordered_map<std::string, attribute_definition>
+const std::unordered_map<std::string, attribute_definition>
     parse_shared_attribute_definitions(const std::vector<std::unique_ptr<pugi::xml_document>> AST_xmls)
 {
     std::unordered_map<std::string, attribute_definition> attribute_definitions;
     for(const auto &ast : AST_xmls) {
-        auto opt = parse_shared_attribute_definition(compound_xml);
+        xml_node compound_ast = ast->child("doxygen").child("compounddef");
+        auto opt = parse_shared_attribute_definition(compound_ast);
         attribute_definitions[opt.name] = opt;
     }
     return attribute_definitions;
@@ -140,7 +145,7 @@ vector<attached_attribute> parse_attached_attributes_string(string attributes_li
     }
     return attributes;
 }
-
+/*
 void add_rendered_template_hybrids(const attribute_definition &opt, TemplateData &variable, const TemplateData constructor_args_data)
 {
     for(const auto &member : opt.const_char_members)
@@ -235,5 +240,5 @@ void add_attributes_templatedata(TemplateData &variable, vector<attached_attribu
             add_rendered_template_hybrids(opt, variable, constructor_args_data);
     }
 }
-
+*/
 } } // namespace inexor::gluegen

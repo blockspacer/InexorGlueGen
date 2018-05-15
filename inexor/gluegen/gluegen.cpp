@@ -24,8 +24,8 @@ using namespace kainjow;
 
 void usage(const std::string &ex, const po::options_description &params) {
     std::cerr
-        << "Inexor GlueGen       Codegenerator which takes an AST produced by Doxygen, finds marked variables \"
-                "and generates arbitrary code based on it.\n\n\n\"
+        << "Inexor GlueGen       Codegenerator which takes an AST produced by Doxygen, finds marked variables "
+                "and generates arbitrary code based on it.\n\n\n"
         << params << "\n";
 }
 
@@ -83,7 +83,8 @@ int main(int argc, const char **argv)
     const string &xml_AST_folder = cli_config["doxygen_AST_folder"].as<string>();
 
 
-    ASTs code{xml_AST_folder};
+    ASTs code;
+    code.load_from_directory(xml_AST_folder);
 
     // options definitions need to get parsed before anything else, since you look for them when parsing the vars/functions/classes..
 // auto shared_attribute_definitions = parse_shared_attribute_definitions(code.attribute_class_xmls);
@@ -95,8 +96,8 @@ int main(int argc, const char **argv)
 
     // add print functions to each type.
     mustache::data template_base_data{mustache::data::type::object};
-    template_base_data.set("type_definitions", print_shared_var_type_definitions(shared_var_type_definitions); //, shared_attribute_definitions));
-    template_base_data.set("variables", print_shared_var_occurences(shared_var_occurences);//, shared_attribute_definitions));
+    template_base_data.set("type_definitions", print_shared_var_type_definitions(shared_var_type_definitions)); //, shared_attribute_definitions));
+    template_base_data.set("variables", print_shared_var_occurences(shared_var_occurences));//, shared_attribute_definitions));
 
     template_base_data.set("file_comment", "// This file gets generated!\n"
             "// Do not modify it directly but its corresponding template file instead!");

@@ -10,16 +10,18 @@
 #include <fstream>
 
 using namespace pugi;
+using namespace kainjow;
+using namespace std;
 
 namespace inexor {
 namespace gluegen {
 
 /// Render a mustache template into a string.
-const std::string render_template(const std::string &tmplate, const TemplateData &tmpldata)
+const std::string render_template(const std::string &tmplate, const std::string &tmplate_filename, const mustache::data &tmpldata)
 {
-    MustacheTemplate tmpl{tmplate};
+    mustache::mustache tmpl{tmplate};
     if(!tmpl.is_valid())
-        std::cout << "Template file " << template_path << " malformatted: " << tmpl.error_message() << std::endl;
+        std::cout << "Template file " << tmplate_filename << " malformatted: " << tmpl.error_message() << std::endl;
     return tmpl.render(tmpldata);
 }
 
@@ -31,7 +33,7 @@ void save_to_file(const std::string &filepath, const std::string &file_content)
     std::cout << "Rendering C++ GlueGen file completed (" << filepath << ")" << std::endl;
 }
 
-void render_files(TemplateData &tmpldata, const std::vector<std::string> &partial_files, const std::vector<std::string> &template_files)
+void render_files(mustache::data &tmpldata, const std::vector<std::string> &partial_files, const std::vector<std::string> &template_files)
 {
     /*
     for(const string &file : partial_files)
@@ -42,17 +44,19 @@ void render_files(TemplateData &tmpldata, const std::vector<std::string> &partia
             // 3. find out how to add a new field here
             template_base_data[entry.key] = render_template(entry.value, template_base_data);
         }
-    } */
+    }
+    */
     for(const string &file : template_files)
     {
-        std::unique_ptr<xml_document>& xml;
+        std::unique_ptr<xml_document> xml;
         if(!xml->load_file(file.c_str(), parse_default|parse_trim_pcdata))
         {
             std::cout << "XML file representing the AST couldn't be parsed: " << file << std::endl;
             return;
         }
-        const string &gen_file_content = render_template(xml.child_name("template"), template_base_data);
-        save_to_file(xml.child_name("filename"), gen_file_content);
+        xml->child("template").value();
+        const string gen_file_content = render_template("nix", "nix", "nix"); //xml->child("template").value(), template_base_data);
+        save_to_file(xml->child("filename").value(), gen_file_content);
     }
 }
 

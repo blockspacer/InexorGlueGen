@@ -5,7 +5,7 @@
 #include <pugiconfig.hpp>
 #include <pugixml.hpp>
 
-namespace inexor { namespace rpc { namespace gluegen {
+namespace inexor { namespace gluegen {
 
 
 /// Replaces input containing escaped chars with their string representation (e.g. "\\n" with the newline character)
@@ -60,4 +60,12 @@ extern bool has_child_with_attribute(const pugi::xml_node &parent, std::string a
 /// You check for "refid" and get all first level childs refid.
 extern std::vector<std::string> get_values_of_childs_attribute(const pugi::xml_node &parent, std::string attribute_name);
 
-} } } // namespace inexor::rpc::gluegen
+/// Finds in the compound xml node the constructors of this class.xml.
+extern std::vector<pugi::xml_node> find_class_constructors(const pugi::xml_node &class_compound_xml);
+
+/// Finds in the AST xml all nodes containing public variables.
+///
+/// The path is "sectiondef(kind==public-attrib)/memberdef(kind==variable)"
+extern std::vector<pugi::xml_node> find_class_member_vars(const pugi::xml_node &class_compound_xml);
+
+} } // namespace inexor::gluegen
