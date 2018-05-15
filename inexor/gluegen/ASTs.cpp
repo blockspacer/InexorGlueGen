@@ -26,7 +26,7 @@ bool is_option_class_node(const xml_node &class_compound_xml)
     return false;
 }
 
-void ASTs::ASTs(const Path &directory)
+ASTs::ASTs(const Path &directory)
 {
     std::vector<Path> all_xml_file_names;
     list_files(directory, all_xml_file_names, ".xml");
