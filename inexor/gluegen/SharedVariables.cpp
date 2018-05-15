@@ -4,12 +4,20 @@
 
 #include <kainjow/mustache.hpp>
 
+#include <boost/algorithm/string.hpp>
+
 #include <pugiconfig.hpp>
 #include <pugixml.hpp>
 
+#include <string>
 
+
+using std::string;
+using std::to_string;
+using std::vector;
 using namespace pugi;
 using namespace kainjow;
+using namespace boost::algorithm;
 
 namespace inexor { namespace gluegen {
 
@@ -36,7 +44,7 @@ SharedVariable::SharedVariable(const xml_node &var_xml, const string &var_namesp
 }
 
 /// Find all marked shared vars inside a given document AST.
-const std::vector<SharedVariable> find_shared_var_occurences(const std::unique_ptr<pugi::xml_document> AST_xml)
+void find_shared_var_occurences(const pugi::xml_node &compound_xml, std::vector<SharedVariable> &output_list)
 {
     // doxygens AST for cpp files is roughly (in xml format):
     // doxygen
@@ -46,9 +54,6 @@ const std::vector<SharedVariable> find_shared_var_occurences(const std::unique_p
     //       member..
     //     section("var")
     //     section("define")..
-    std::vector<SharedVariable> buf;
-
-    const xml_node compound_xml = AST_xml->child("doxygen").child("compounddef");
 
     // all vars in one xml file are in the same ns, thanks doxygen.
     const string ns_of_vars = get_namespace_of_namespace_file(compound_xml);
@@ -58,26 +63,28 @@ const std::vector<SharedVariable> find_shared_var_occurences(const std::unique_p
         if(string(section.attribute("kind").value()) == "var"
            || string(section.attribute("kind").value()) == "func") // sometimes accessing constructors gets mistakenly recognized as function
         {
-            for(const auto &member : section.children("memberdef"))
+            for(const auto &member_xml : section.children("memberdef"))
             {
-                if(is_marked_variable()) {
-                    buf.push_back(SharedVariable{member_xml, ns_of_vars});
+                if(is_marked_variable(member_xml)) {
+                    output_list.push_back(SharedVariable{member_xml, ns_of_vars});
                 }
             }
         }
     }
-    return buf;
 }
 
-const std::vector<SharedVariable> find_shared_var_occurences(const std::vector<std::unique_ptr<pugi::xml_document>> AST_code_xmls)
+const std::vector<SharedVariable> find_shared_var_occurences(const std::vector<std::unique_ptr<pugi::xml_document>> &AST_code_xmls)
 {
     std::vector<SharedVariable> buf;
-    for(const auto &fileast : AST_code_xmls)
-        buf += find_shared_var_occurences(fileast);
+    for(const std::unique_ptr<pugi::xml_document> &fileast : AST_code_xmls)
+    {
+        const xml_node compound_xml = fileast->child("doxygen").child("compounddef");
+        find_shared_var_occurences(compound_xml, buf);
+    }
     return buf;
 }
 
-const std::vector<std::string> get_shared_var_types(const std::vector<SharedVariable> all_sharedvars)
+const std::vector<std::string> get_shared_var_types(const std::vector<SharedVariable> &all_sharedvars)
 {
     std::vector<std::string> buf;
     for(const auto &var : all_sharedvars)
@@ -152,7 +159,7 @@ mustache::partial get_index_incrementer(bool reset = false)
     });
 }
 
-mustache::data get_shared_var_templatedata(const SharedVariable &var, ParserContext &data)
+mustache::data get_shared_var_templatedata(const SharedVariable &var)
 {
     mustache::data curvariable{mustache::data::type::object};
     // These is a hacky way to distinct between these in pure-data form.. TODO embedd logic in template?
@@ -165,15 +172,15 @@ mustache::data get_shared_var_templatedata(const SharedVariable &var, ParserCont
 //    curvariable.set("name_unique", node.get_name_unique());
 //    curvariable.set("name_cpp_full", node.get_name_cpp_full());
 //    curvariable.set("name_cpp_short", node.get_name_cpp_short());
-
-
-    curvariable.set("var_namespace", mustache::data::type::list{var.var_namespace});
+    mustache::data ns{mustache::data::type::list};
+   // ns.push_back( var.var_namespace)
+    curvariable.set("var_namespace", ns);
     curvariable.set("var_name", var.name);
     curvariable.set("index", get_index_incrementer());
 
   //  add_namespace_seps_templatedata(curvariable, node.get_namespace());
 
-    add_options_templatedata(curvariable, node.attached_options, data);
+   // add_options_templatedata(curvariable, node.attached_options, data);
     return curvariable;
 }
         
@@ -183,7 +190,7 @@ kainjow::mustache::data print_shared_var_occurences(const std::vector<SharedVari
 
     for(const auto &shared_var : shared_var_occurences)
     {
-        sharedvars << get_shared_var_templatedata(*node, -1, data);
+        sharedvars << get_shared_var_templatedata(shared_var);
     }
     return sharedvars;
 }

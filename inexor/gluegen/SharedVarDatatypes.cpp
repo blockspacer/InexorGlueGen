@@ -4,12 +4,15 @@
 
 #include <kainjow/mustache.hpp>
 
+#include <boost/algorithm/string.hpp>
+
 #include <vector>
 #include <string>
-#include <hash_set>
+#include <set>
 
 using namespace pugi;
 using namespace std;
+using namespace boost::algorithm;
 
 namespace inexor { namespace gluegen {
 
@@ -17,17 +20,17 @@ shared_class_definition new_shared_class_definition(const xml_node &compound_xml
 {
     shared_class_definition def;
 
-    def->refid = compound_xml.attribute("id").value();
+    def.refid = compound_xml.attribute("id").value();
     string full_name =  get_complete_xml_text(compound_xml.child("compoundname")); // includes the namespace e.g. inexor::rendering::screen
 
     vector<string> ns_and_name(split_by_delimiter(full_name, "::"));
 
-    def->class_name = ns_and_name.back();
+    def.class_name = ns_and_name.back();
     ns_and_name.pop_back();
-    def->definition_namespace = join(ns_and_name, "::");
-    def->definition_header = compound_xml.child("location").attribute("file").value();
+    def.definition_namespace = join(ns_and_name, "::");
+    def.definition_header = compound_xml.child("location").attribute("file").value();
 
-    if(contains(def->definition_header, ".c"))
+    if(contains(def.definition_header, ".c"))
     {
         std::cerr << "ERROR: SharedClasses can only be defined in cleanly include-able **header**-files"
                   << std::endl << "Class in question is " << full_name << std::endl;
@@ -38,7 +41,7 @@ shared_class_definition new_shared_class_definition(const xml_node &compound_xml
     {
         string type = get_complete_xml_text(var_xml.child("type"));
         if(is_marked_variable(var_xml))
-            def.elements.push_back(SharedVariable{var_xml});
+            def.elements.push_back(SharedVariable{var_xml, def.definition_namespace});
     }
     return def;
 }
@@ -47,7 +50,7 @@ shared_class_definition new_shared_class_definition(const xml_node &compound_xml
 bool is_relevant_class(const xml_node &compound_xml, const std::set<std::string> &relevant_classes)
 {
     // TODO control case that both are in the same namespace or not.
-    if(relevant_classes.find(get_complete_xml_text(compound_xml.child("compoundname"))))
+ //  if(relevant_classes.find(get_complete_xml_text(compound_xml.child("compoundname"))))
         return true;
     return false;
 }
@@ -65,10 +68,11 @@ std::vector<shared_class_definition>
                                 const std::vector<std::string> &shared_var_type_literals)
 {
     std::vector<shared_class_definition> buf;
+    const set<string> typenames(shared_var_type_literals.begin(), shared_var_type_literals.end());
     for(const auto &class_xml : AST_class_xmls)
     {
         const xml_node &compound_xml = class_xml->child("doxygen").child("compounddef");
-        if(is_relevant_class(compound_xml))
+        if(is_relevant_class(compound_xml, typenames))
             buf.push_back(new_shared_class_definition(compound_xml));
     }
     return buf;
@@ -80,22 +84,20 @@ using namespace kainjow;
 /// \param ctx
 /// \param add_instances
 /// \return
-mustache::data get_shared_class_templatedata(const shared_class_definition &def, ParserContext &ctx, bool add_instances = true)
+mustache::data get_shared_class_templatedata(const shared_class_definition &def)
 {
     mustache::data cur_definition{mustache::data::type::object};
     // The class needs to be defined in a cleanly includeable header file.
-    cur_definition.set("definition_header_file", def->containing_header);
+    cur_definition.set("definition_header", def.definition_header);
 
-    // TODO: recognize the innerclass case!
-    // The name of the class with leading namespace.
-    cur_definition.set("definition_name_cpp", def->get_name_cpp_full());
-    cur_definition.set("definition_name_unique", def->get_name_unique());
-
-    add_options_templatedata(cur_definition, def->attached_options, ctx);
+    cur_definition.set("class_name", def.class_name);
+   // cur_definition.set("definition_name_unique", def.get_name_unique());
+/*
+    add_options_templatedata(cur_definition, def.attached_options, ctx);
 
     mustache::data all_instances{mustache::data::type::list};
 
-    if(add_instances) for(ShTreeNode *inst_node : def->instances)
+    if(add_instances) for(ShTreeNode *inst_node : def.instances)
         {
             mustache::data cur_instance{mustache::data::type::object};
             add_namespace_seps_templatedata(cur_instance, inst_node->get_namespace());
@@ -124,13 +126,15 @@ mustache::data get_shared_class_templatedata(const shared_class_definition &def,
     mustache::data members{mustache::data::type::list};
 
     int local_index = 2;
-    for(ShTreeNode *child : def->nodes)
+    for(SharedVariable &child : def.elements)
     {
-        members << get_shared_var_templatedata(*child, local_index++, ctx);
+    //    members << get_shared_var_templatedata(*child, local_index++, ctx);
     }
     cur_definition.set("members", members);
+            */
     return cur_definition;
 }
+
 mustache::data print_shared_var_type_definitions(std::vector<shared_class_definition> &shared_var_type_definitions)
                                                 //, shared_attribute_definitions)
 {
@@ -138,7 +142,7 @@ mustache::data print_shared_var_type_definitions(std::vector<shared_class_defini
 
     for(const auto &class_def : shared_var_type_definitions)
     {
-        sharedclasses << get_shared_class_templatedata(class_def_it.second, data);
+        sharedclasses << get_shared_class_templatedata(class_def);
     }
     return sharedclasses;
 

@@ -48,7 +48,7 @@ struct ASTs
     std::vector<xml_document_ptr> code_xmls;
 
     /// Loads the xml files into memory and sorts them to class, code or option_xmls.
-    ASTs(const Path &directory);
+    void load_from_directory(const Path &directory);
 
 private:
     bool load_xml_file(const Path &file, xml_document_ptr &xml);

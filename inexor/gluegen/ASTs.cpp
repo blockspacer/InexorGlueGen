@@ -3,6 +3,7 @@
 
 #include <boost/algorithm/string.hpp>
 
+#include <vector>
 #include <iostream>
 
 using namespace std;
@@ -26,7 +27,7 @@ bool is_option_class_node(const xml_node &class_compound_xml)
     return false;
 }
 
-ASTs::ASTs(const Path &directory)
+void ASTs::load_from_directory(const Path &directory)
 {
     std::vector<Path> all_xml_file_names;
     list_files(directory, all_xml_file_names, ".xml");
@@ -40,27 +41,24 @@ ASTs::ASTs(const Path &directory)
         {
             auto xml = make_unique<xml_document>();
             if(load_xml_file(file, xml)) code_xmls.push_back(std::move(xml));
-            return;
+            continue;
         }
 
         if(!contains(file.stem().string(), "class") && !contains(file.stem().string(), "struct"))
-            return;
+            continue;
         // handle class ASTs:
         // either a SharedOption (remember it by classname) or just remember the class AST by its refid (doxygens reference ID)
 
         auto xml = make_unique<xml_document>();
-        if(!load_xml_file(file, xml)) return;
+        if(!load_xml_file(file, xml)) continue;
 
-        const xml_node compound_xml = class_xml->child("doxygen").child("compounddef"); //[@kind='class' and @language='C++']");
+        const xml_node compound_xml = xml->child("doxygen").child("compounddef"); //[@kind='class' and @language='C++']");
 
         if(is_option_class_node(compound_xml)) {
-            // the class name including the namespace e.g. inexor::rendering::screen
-            string option_class_name = compound_xml.child("compoundname").value();
-            option_xmls[option_class_name] = std::move(xml);
+            attribute_class_xmls.push_back(std::move(xml));
         }
         else {
-            string refid = compound_xml.attribute("id").value();
-            class_xmls[refid] = std::move(xml);
+            class_xmls.push_back(std::move(xml));
         }
     }
 }

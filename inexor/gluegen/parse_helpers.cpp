@@ -12,7 +12,7 @@
 using namespace pugi;
 using namespace std;
 
-namespace inexor { namespace rpc { namespace gluegen {
+namespace inexor { namespace gluegen {
 
 string unescape(string &str)
 {
@@ -235,4 +235,40 @@ std::vector<std::string> get_values_of_childs_attribute(const pugi::xml_node & p
     return found_attribute_values;
 }
 
-} } } // namespace inexor::rpc::gluegen
+
+vector<xml_node> find_class_constructors(const xml_node &class_compound_xml)
+{
+    vector<xml_node> constructors;
+
+    vector<string> ns(split_by_delimiter(class_compound_xml.child("compoundname").text().as_string(), "::"));
+    string raw_func_name = ns.back(); // constructor got same name as class
+
+    for(const xml_node section : class_compound_xml.children("sectiondef"))
+    {
+        if(string(section.attribute("kind").value()) == "public-func")
+        {
+            for(const xml_node member : section.children("memberdef"))
+            {
+                if(string(member.attribute("kind").value()) == "function")
+                {
+                    if(raw_func_name == member.child("name").text().as_string())
+                        constructors.push_back(member);
+                }
+            }
+        }
+    }
+    return constructors;
+}
+
+vector<xml_node> find_class_member_vars(const xml_node &class_compound_xml)
+{
+    vector<xml_node> vars;
+    for(const xml_node section : class_compound_xml.children("sectiondef"))
+        if(string(section.attribute("kind").value()) == "public-attrib")
+            for(const xml_node member : section.children("memberdef"))
+                if(string(member.attribute("kind").value()) == "variable")
+                    vars.push_back(member);
+    return vars;
+}
+
+} } // namespace inexor::gluegen

@@ -32,7 +32,7 @@ class SharedVariable
 
     /// All attributes attached when instancing this variable (without resolving them.).
     /// e.g. "NoSync()|Persistent()"
-    const std::string attached_attributes_literal;
+    std::string attached_attributes_literal;
 
     /// Creates a Node, the type is determined by the cpp literal string.
     /// @param cpp_type The literal type declaration (e.g. "inexor::SharedVar<int>" or the refid)
@@ -52,10 +52,10 @@ class SharedVariable
 };
 
 /// Find all marked global variables inside a bunch of AST xml files (as spit out by doxygen) and save them in a vector.
-extern const std::vector<SharedVariable> find_shared_var_occurences(const std::vector<std::unique_ptr<pugi::xml_document>> AST_code_xmls);
+extern const std::vector<SharedVariable> find_shared_var_occurences(const std::vector<std::unique_ptr<pugi::xml_document>> &AST_code_xmls);
 
 /// Return the type literal, given a bunch of SharedVariables (possibly with duplicate types).
-extern const std::vector<std::string> get_shared_var_types(const std::vector<SharedVariable> all_sharedvars);
+extern const std::vector<std::string> get_shared_var_types(const std::vector<SharedVariable> &all_sharedvars);
 
 /// Returns true if this node is marked to be shared.
 extern bool is_marked_variable(const pugi::xml_node &member_xml);
