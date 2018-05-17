@@ -59,7 +59,6 @@ int main(int argc, const char **argv)
     vector<string> args(argv+1, argv+argc);
     std::cout << "Used command line options: \n";
     for(auto arg : args) std::cout << arg << "\n";
-
     try {
         po::parsed_options parsed = po::command_line_parser(args).options(params).run();
         po::store(parsed, cli_config);
@@ -78,10 +77,9 @@ int main(int argc, const char **argv)
         return 1;
     }
 
-    const vector<string> &template_files = cli_config["template_file"].as<vector<string>>();
-    const vector<string> &partial_files = cli_config["partial_file"].as<vector<string>>();
-    const string &xml_AST_folder = cli_config["doxygen_AST_folder"].as<string>();
-
+    const vector<string> template_files = cli_config["template_file"].as<vector<string>>();
+    const vector<string> partial_files = cli_config.count("help") ? cli_config["partial_file"].as<vector<string>>() : vector<string>();
+    const string xml_AST_folder = cli_config["doxygen_AST_folder"].as<string>();
 
     ASTs code;
     code.load_from_directory(xml_AST_folder);
