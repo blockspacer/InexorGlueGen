@@ -16,15 +16,6 @@ using namespace std;
 namespace inexor {
 namespace gluegen {
 
-/// Render a mustache template into a string.
-const std::string render_template(const std::string &tmplate, const std::string &tmplate_filename, const mustache::data &tmpldata)
-{
-    mustache::mustache tmpl{tmplate};
-    if(!tmpl.is_valid())
-        std::cout << "Template file " << tmplate_filename << " malformatted: " << tmpl.error_message() << std::endl;
-    return tmpl.render(tmpldata);
-}
-
 /// Create a file containing the given content.
 void save_to_file(const std::string &filepath, const std::string &file_content)
 {
@@ -35,28 +26,46 @@ void save_to_file(const std::string &filepath, const std::string &file_content)
 
 void render_files(mustache::data &tmpldata, const std::vector<std::string> &partial_files, const std::vector<std::string> &template_files)
 {
-    /*
-    for(const string &file : partial_files)
-    {
-        // 1. Load xml file
-        // 2. find field with entries and iterate over them
-        for(entry : file_xml.entries){
-            // 3. find out how to add a new field here
-            template_base_data[entry.key] = render_template(entry.value, template_base_data);
-        }
-    }
-    */
     for(const string &file : template_files)
     {
-        std::unique_ptr<xml_document> xml;
+        auto xml = make_unique<xml_document>();
         if(!xml->load_file(file.c_str(), parse_default|parse_trim_pcdata))
         {
-            std::cout << "XML file representing the AST couldn't be parsed: " << file << std::endl;
+            std::cout << "XML file defining the rendering template couldn't be parsed: " << file << std::endl;
             return;
         }
-        xml->child("template").value();
-        const string gen_file_content = render_template("nix", "nix", "nix"); //xml->child("template").value(), template_base_data);
-        save_to_file(xml->child("filename").value(), gen_file_content);
+        // template data is just for this file, since we are adding partials
+        mustache::data local_tmpldata(tmpldata);
+
+        // firstly render all partials, each adding its contents to the template data
+        for (auto &a : xml->children("partial"))
+        {
+            const string partial_name = a.attribute("name").value();
+            const string partial_templ = a.child_value();
+            mustache::mustache tmpl{partial_templ};
+            if(!tmpl.is_valid())
+                std::cout << "Error in template file (" << file << "). Malformatted partial (" << partial_name << "):\n"
+                            << tmpl.error_message() << std::endl;
+
+            const string partial_value = tmpl.render(local_tmpldata);
+
+            std::cout << partial_name << ": " << partial_value;
+            local_tmpldata.set(partial_name, partial_value);
+        }
+
+        // secondly render all files, using the templatedata
+        for(auto &a : xml->children("file"))
+        {
+            const string file_name = a.attribute("filename").value();
+            const string file_templ = a.child_value();
+            mustache::mustache tmpl{file_templ};
+            if(!tmpl.is_valid())
+                std::cout << "Error in template file (" << file << "). Malformatted file content (" << file_name << "):\n"
+                            << tmpl.error_message() << std::endl;
+
+            const string file_content = tmpl.render(local_tmpldata);
+            save_to_file(file_name, file_content);
+        }
     }
 }
 
