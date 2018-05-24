@@ -7,6 +7,7 @@
 
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 namespace inexor {
 namespace gluegen {
@@ -42,7 +43,8 @@ struct ASTs
     std::vector<xml_document_ptr> attribute_class_xmls;
 
     /// In case the class xml is not a shared option definition, it will be saved in here.
-    std::vector<xml_document_ptr> class_xmls;
+    /// Key is the ID of the class.
+    std::unordered_map<std::string, xml_document_ptr> class_xmls;
 
     /// The xml files containing the ASTs of all source code files.
     std::vector<xml_document_ptr> code_xmls;
