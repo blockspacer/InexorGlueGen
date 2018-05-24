@@ -5,6 +5,7 @@
 #include <kainjow/mustache.hpp>
 
 #include <vector>
+#include <unordered_map>
 #include <string>
 
 namespace inexor { namespace gluegen {
@@ -32,12 +33,17 @@ struct shared_class_definition
     std::vector<SharedVariable> elements;
 };
 
-/// Return a number of parsed shared class definitions, given the literals of relevant types we want to have obtained.
+/// Return a number of parsed shared class definitions, given a list of sharedvars, which types we want to have obtained.
+/// Note: if a classes member is marked, its type will also be appended to the return vector.
 /// @param AST_class_xmls the AST as parsed by doxygen in XML files. Each file corresponds to the definition of a class.
-extern std::vector<shared_class_definition>
-        find_class_definitions(const std::vector<std::unique_ptr<pugi::xml_document>> &AST_class_xmls,
-                                const std::vector<std::string> &shared_var_type_literals);
+///                       the key is the ID of the class (i.e. the type ID).
+/// @param shared_vars for each of those, the t of type IDs (as found in the AST) which are relevant.
+/// @param class_definitions the map to be filled, key is always the printed out type.
+extern void find_class_definitions(const std::unordered_map<std::string, std::unique_ptr<pugi::xml_document>> &AST_class_xmls,
+                                   const std::vector<SharedVariable> &shared_vars,
+                                   std::unordered_map<std::string, shared_class_definition> &class_definitions);
 
-extern kainjow::mustache::data print_shared_var_type_definitions(std::vector<shared_class_definition> &shared_var_type_definitions);
+extern kainjow::mustache::data print_type_definitions(
+                    const std::unordered_map<std::string, shared_class_definition> &type_definitions);
                                                           //, shared_attribute_definitions);
 } } // namespace inexor::gluegen

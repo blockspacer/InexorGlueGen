@@ -7,6 +7,7 @@
 #include <boost/algorithm/string.hpp>
 
 #include <vector>
+#include <unordered_map>
 #include <string>
 #include <set>
 
@@ -36,46 +37,39 @@ shared_class_definition new_shared_class_definition(const xml_node &compound_xml
                   << std::endl << "Class in question is " << full_name << std::endl;
         std::exit(1);
     }
-
-    for(const xml_node &var_xml : find_class_member_vars(compound_xml))
-    {
-        string type = get_complete_xml_text(var_xml.child("type"));
-        if(is_marked_variable(var_xml))
-            def.elements.push_back(SharedVariable{var_xml, def.definition_namespace});
-    }
     return def;
 }
 
-/// Return true if this class' name is contained in the shared_var_type_literals hashset.
-bool is_relevant_class(const xml_node &compound_xml, const std::set<std::string> &relevant_classes)
+void find_class_definitions(const unordered_map<string, unique_ptr<xml_document>> &AST_class_xmls,
+                            const std::vector<SharedVariable> &shared_vars,
+                            unordered_map<string, shared_class_definition> &class_definitions)
 {
-    // TODO control case that both are in the same namespace or not.
- //  if(relevant_classes.find(get_complete_xml_text(compound_xml.child("compoundname"))))
-        return true;
-    return false;
-}
-
-const std::set<std::string> shared_var_type_literals(const std::vector<std::string> &class_vec)
-{
-    std::set<std::string> buf;
-    for(const string &c : class_vec)
-        buf.emplace(c);
-    return buf;
-}
-
-std::vector<shared_class_definition>
-        find_class_definitions(const std::vector<std::unique_ptr<pugi::xml_document>> &AST_class_xmls,
-                                const std::vector<std::string> &shared_var_type_literals)
-{
-    std::vector<shared_class_definition> buf;
-    const set<string> typenames(shared_var_type_literals.begin(), shared_var_type_literals.end());
-    for(const auto &class_xml : AST_class_xmls)
+    for(const auto &var : shared_vars)
     {
-        const xml_node &compound_xml = class_xml->child("doxygen").child("compounddef");
-        if(is_relevant_class(compound_xml, typenames))
-            buf.push_back(new_shared_class_definition(compound_xml));
+        const string var_type_hash = var.type->print();
+        if(class_definitions.find(var_type_hash) != class_definitions.end())
+            // already a known type
+            continue;
+
+        if(AST_class_xmls.find(var.type->refid) == AST_class_xmls.end()) {
+            std::cerr << "ERROR: variable '" << var.name << "'has been marked for reflection, but type is not known.\n"
+                      << "type in question is " << var_type_hash << std::endl;
+            continue;
+        }
+        const xml_node &compound_xml = AST_class_xmls.at(var.type->refid)->child("doxygen").child("compounddef");
+
+        shared_class_definition class_def = new_shared_class_definition(compound_xml);
+
+        // Check all elements of the class definition for markers
+        for(const xml_node &var_xml : find_class_member_vars(compound_xml))
+        {
+            if(not is_marked_variable(var_xml))
+                continue;
+            class_def.elements.push_back(SharedVariable{var_xml, class_def.definition_namespace});
+        }
+        find_class_definitions(AST_class_xmls, class_def.elements, class_definitions);
+        class_definitions[var_type_hash] = std::move(class_def);
     }
-    return buf;
 }
 
 using namespace kainjow;
@@ -114,7 +108,7 @@ mustache::data get_shared_class_templatedata(const shared_class_definition &def)
             {
                 mustache::data dummy_list(mustache::data::type::list);
                 dummy_list << get_shared_class_templatedata(inst_node->template_type_definition, ctx, false);
-                cur_instance.set("first_template_type", std::move(dummy_list));
+                cur_instance.set("first_template_type", move(dummy_list));
             }
 
             add_options_templatedata(cur_instance, inst_node->attached_options, ctx);
@@ -135,14 +129,14 @@ mustache::data get_shared_class_templatedata(const shared_class_definition &def)
     return cur_definition;
 }
 
-mustache::data print_shared_var_type_definitions(std::vector<shared_class_definition> &shared_var_type_definitions)
+mustache::data print_type_definitions(const unordered_map<string, shared_class_definition> &type_definitions)
                                                 //, shared_attribute_definitions)
 {
     mustache::data sharedclasses{mustache::data::type::list};
 
-    for(const auto &class_def : shared_var_type_definitions)
+    for(const auto &class_def : type_definitions)
     {
-        sharedclasses << get_shared_class_templatedata(class_def);
+        sharedclasses << get_shared_class_templatedata(class_def.second);
     }
     return sharedclasses;
 
