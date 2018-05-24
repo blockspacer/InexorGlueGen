@@ -19,6 +19,7 @@
 using namespace inexor::gluegen;
 namespace po = boost::program_options;
 using std::string;
+using std::unordered_map;
 using std::vector;
 using namespace kainjow;
 
@@ -87,15 +88,15 @@ int main(int argc, const char **argv)
     // options definitions need to get parsed before anything else, since you look for them when parsing the vars/functions/classes..
 // auto shared_attribute_definitions = parse_shared_attribute_definitions(code.attribute_class_xmls);
 
-    auto shared_var_occurences = find_shared_var_occurences(code.code_xmls);
+    auto var_occurences = find_shared_var_occurences(code.code_xmls);
 
-    auto shared_var_type_names = get_shared_var_types(shared_var_occurences);
-    auto shared_var_type_definitions = find_class_definitions(code.class_xmls, shared_var_type_names);
+    unordered_map<string, shared_class_definition> type_definitions;
+    find_class_definitions(code.class_xmls, var_occurences, type_definitions);
 
     // add print functions to each type.
     mustache::data template_base_data{mustache::data::type::object};
-    template_base_data.set("type_definitions", print_shared_var_type_definitions(shared_var_type_definitions)); //, shared_attribute_definitions));
-    template_base_data.set("variables", print_shared_var_occurences(shared_var_occurences));//, shared_attribute_definitions));
+    template_base_data.set("type_definitions", print_type_definitions(type_definitions));
+    template_base_data.set("variables", print_shared_var_occurences(var_occurences));
 
     template_base_data.set("file_comment", "// This file gets generated!\n"
             "// Do not modify it directly but its corresponding template file instead!");

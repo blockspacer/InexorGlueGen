@@ -7,21 +7,44 @@
 
 #include <vector>
 #include <string>
+#include <cstring>
+#include <set>
 
 namespace inexor { namespace gluegen {
 
-class SharedVariable
+struct SharedVariable
 {
+    /// The type of a variable can include template arguments
+    /// i.e. SharedMap<int, SharedVar<int>>
+    /// becomes
+    ///         SharedMap (refid = class_sharedmap)
+    ///         /                           \
+    ///     int (refid = classint)     SharedVar (refid = class_sharedvar)
+    ///                                      \
+    ///                                 int (refid = classint)
+    struct type_node_t {
+        /// Either the refid of the class or the name of a primitive (int/float/..).
+        std::string refid;
+        std::vector<type_node_t *> template_types;
+        ~type_node_t()
+        {
+            for (size_t i = 0; i < template_types.size(); i++)
+                delete template_types[i];
+        }
 
-    /// In case this is a NODE_CLASS_SINGLETON and its a template, we link to the shared classes definition of the template arg.
-    /// @note This is for handling the edge case of a SharedLists, since there we're interested in the templated arg
-    //        (SharedList<player> players).
-    //const std::string template_type;
+        std::string print() const
+        {
+            std::string buf = refid + "<";
+            for (size_t i = 0; i < template_types.size(); i++)
+            {
+                buf += template_types[i]->print();
+                buf += i==template_types.size()-1 ? ">" : ", ";
+            }
+            return buf;
+        }
+    };
 
-  public:
-
-    /// The literal type (either e.g. "int"/"float".. or the refid of the class)
-    const std::string type;
+    type_node_t *type;
 
     /// The literal variable name without namespace (e.g. "mapmodel_amount").
     const std::string name;
@@ -34,28 +57,16 @@ class SharedVariable
     /// e.g. "NoSync()|Persistent()"
     std::string attached_attributes_literal;
 
-    /// Creates a Node, the type is determined by the cpp literal string.
-    /// @param cpp_type The literal type declaration (e.g. "inexor::SharedVar<int>" or the refid)
-    /// @param cpp_name The literal variable name (e.g. "mapmodel_amount").
-    /// @param var_namespace The namespace of the variable (e.g. "inexor::rendering").
-    /// @param attached_attributes_literal The literal of all used attributes (without resolving them.) (e.g. "NoSync()|Persistent()").
- //   SharedVariable(const std::string &cpp_type, const std::string &cpp_name, const std::string &var_namespace,
- //              const std::string &attached_attributes_literal);
-
-    /// Copy constructor, creates a new subtree similar of all childs of the given node.
-    /// So this allocates all children again on the heap.
-  //  SharedVariable(const SharedVariable &old);
-
-
     /// Constructs a new SharedVar after parsing a xml variable node.
     SharedVariable(const pugi::xml_node &var_xml, const std::string &var_namespace);
+    ~SharedVariable()
+    {
+       // delete type;
+    }
 };
 
 /// Find all marked global variables inside a bunch of AST xml files (as spit out by doxygen) and save them in a vector.
 extern const std::vector<SharedVariable> find_shared_var_occurences(const std::vector<std::unique_ptr<pugi::xml_document>> &AST_code_xmls);
-
-/// Return the type literal, given a bunch of SharedVariables (possibly with duplicate types).
-extern const std::vector<std::string> get_shared_var_types(const std::vector<SharedVariable> &all_sharedvars);
 
 /// Returns true if this node is marked to be shared.
 extern bool is_marked_variable(const pugi::xml_node &member_xml);
