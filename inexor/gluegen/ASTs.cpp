@@ -58,7 +58,7 @@ void ASTs::load_from_directory(const Path &directory)
             attribute_class_xmls.push_back(std::move(xml));
         }
         else {
-            class_xmls.push_back(std::move(xml));
+            class_xmls[compound_xml.attribute("id").value()] = std::move(xml);
         }
     }
 }
