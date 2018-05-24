@@ -24,7 +24,9 @@ namespace inexor { namespace gluegen {
 /// Returns true if this node is marked to be shared.
 bool is_marked_variable(const xml_node &member_xml)
 {
-    return contains(get_complete_xml_text(member_xml.child("type")), "SharedVar<");
+    if(contains(get_complete_xml_text(member_xml.child("initializer")), "reflection_marking"))
+        return true;
+    return false;
 }
 
 string get_namespace_of_namespace_file(const xml_node compound_xml)
