@@ -46,8 +46,8 @@ void find_class_definitions(const unordered_map<string, unique_ptr<xml_document>
 {
     for(const auto &var : shared_vars)
     {
-        const string var_type_hash = var.type->print();
-        if(class_definitions.find(var_type_hash) != class_definitions.end())
+        string var_type_hash = var.type->print();
+        if(class_definitions.count(var_type_hash) != 0)
             // already a known type
             continue;
 
@@ -68,7 +68,7 @@ void find_class_definitions(const unordered_map<string, unique_ptr<xml_document>
             class_def.elements.push_back(SharedVariable{var_xml, class_def.definition_namespace});
         }
         find_class_definitions(AST_class_xmls, class_def.elements, class_definitions);
-        class_definitions[var_type_hash] = std::move(class_def);
+        class_definitions.insert({var_type_hash, std::move(class_def)});
     }
 }
 
