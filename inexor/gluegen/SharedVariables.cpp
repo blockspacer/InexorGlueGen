@@ -48,7 +48,13 @@ SharedVariable::type_node_t *get_type_tree(vector<xml_node>::const_iterator &it,
 {
     // the actual name
     SharedVariable::type_node_t *node = new SharedVariable::type_node_t();
+
     node->refid = it->attribute("refid").value();
+    // handle case that there was no refid set -> take the value
+    if (node->refid.empty())
+        node->refid = it->value();
+
+    // add to parents template types.
     if (!parent_stack.empty())
         parent_stack.back()->template_types.push_back(node);
 
