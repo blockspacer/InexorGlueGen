@@ -17,26 +17,45 @@ using namespace boost::algorithm;
 
 namespace inexor { namespace gluegen {
 
+/// Split a variable or class definition name into namespace part and the short name.
+/// i.e. split inexor::rendering::Screen into "inexor::rendering" and "Screen"
+/// @return std::pair {namespace, name}
+std::pair <const string, const string> split_into_namspace_and_name(const string &full_name)
+{
+    vector<string> ns_and_name(split_by_delimiter(full_name, "::"));
+
+    const string name{ns_and_name.back()};
+    ns_and_name.pop_back();
+    const string _namespace = join(ns_and_name, "::");
+    return {_namespace, name};
+};
+
+/// Return the header file a given class was defined in.
+/// If the class was not defined in a header, issues an error and quits the program.
+const string get_definitions_header_file(const xml_node &compound_xml, const string &classname)
+{
+    const string definition_header = compound_xml.child("location").attribute("file").value();
+
+    if(contains(definition_header, ".c"))
+    {
+        std::cerr << "ERROR: SharedClasses can only be defined in cleanly include-able **header**-files\n"
+                  << "Class in question is " << classname << std::endl;
+        std::exit(1);
+    }
+    return definition_header;
+}
+
 shared_class_definition new_shared_class_definition(const xml_node &compound_xml)
 {
     shared_class_definition def;
 
     def.refid = compound_xml.attribute("id").value();
-    string full_name =  get_complete_xml_text(compound_xml.child("compoundname")); // includes the namespace e.g. inexor::rendering::screen
+    string full_name =  get_complete_xml_text(compound_xml.child("compoundname"));
+    const auto &name_ns_tuple = split_into_namspace_and_name(full_name);
+    def.definition_namespace = name_ns_tuple.first;
+    def.class_name = name_ns_tuple.second;
+    def.definition_header = get_definitions_header_file(compound_xml, full_name);
 
-    vector<string> ns_and_name(split_by_delimiter(full_name, "::"));
-
-    def.class_name = ns_and_name.back();
-    ns_and_name.pop_back();
-    def.definition_namespace = join(ns_and_name, "::");
-    def.definition_header = compound_xml.child("location").attribute("file").value();
-
-    if(contains(def.definition_header, ".c"))
-    {
-        std::cerr << "ERROR: SharedClasses can only be defined in cleanly include-able **header**-files"
-                  << std::endl << "Class in question is " << full_name << std::endl;
-        std::exit(1);
-    }
     return def;
 }
 
