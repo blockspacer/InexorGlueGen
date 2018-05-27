@@ -59,6 +59,40 @@ shared_class_definition new_shared_class_definition(const xml_node &compound_xml
     return def;
 }
 
+
+/// If a set of template parameters were given for a class and a set of corresponding types were given for
+/// an instance of such a class, the result will be a map, mapping the alias to the real type of the instance.
+///
+/// This map will be used when constructing any member variables where the type is an alias.
+void add_template_type_alias(const xml_node &compound_xml, const SharedVariable::type_node_t *const type,
+                             unordered_map<string, SharedVariable::type_node_t *> &map)
+{
+    if (!compound_xml.child("templateparamlist"))
+        return;
+    size_t i = 0;
+    for(const auto &template_param : compound_xml.child("templateparamlist").children())
+    {
+        std::string param_str = template_param.child("type").child_value(); // e.g. "typename U"
+
+        vector<string> param_words(split_by_delimiter(param_str, " ")); // e.g. "typename", "U"
+        if (param_words.size() != 2 || (param_words[0] != "class" && param_words[0] != "typename"))
+        {
+            std::cerr << "ERROR: Template parameters of SharedClasses need to be in form\n"
+                      << "'typename PLACEHOLDER' or 'class PLACEHOLDER'\n"
+                      << "Class in question is " << compound_xml.child("compoundname").child_value() << std::endl;
+            std::exit(1);
+        }
+        if (type->template_types.size() <= i)
+        {
+            std::cerr << "ERROR: Template parameters of SharedClass definition does not match instance\n"
+                      << "Class in question is " << compound_xml.child("compoundname").child_value() << std::endl;
+            std::exit(1);
+        }
+        map.emplace(param_words[1], type->template_types[i]);
+        i++;
+    }
+}
+
 void find_class_definitions(const unordered_map<string, unique_ptr<xml_document>> &AST_class_xmls,
                             const std::vector<SharedVariable> &shared_vars,
                             unordered_map<string, shared_class_definition> &class_definitions)
@@ -79,12 +113,37 @@ void find_class_definitions(const unordered_map<string, unique_ptr<xml_document>
 
         shared_class_definition class_def = new_shared_class_definition(compound_xml);
 
+        // get all template parameters for this class and see what the instance maps them to.
+        unordered_map<string, SharedVariable::type_node_t *>  type_resolve_map;
+        add_template_type_alias(compound_xml, var.type, type_resolve_map);
+
+        // Supported template use cases:
+        // 1. class/typename can be used
+        // 1b. templated class in templated class has templated member.
+
+        // TODO: Default parameters for templates
+        // TODO: non-type template parameters
+        // template<int X = 100> can be used (value as default value)
+        // template<class X = int> can be used (type as default value)
+        // template<class Type1, class Type2 = Type1> can be used (type is other type)
+        // empty <> instantion possible when using default values
+        /// Spezialisierungen
+
+
         // Check all elements of the class definition for markers
         for(const xml_node &var_xml : find_class_member_vars(compound_xml))
         {
             if(not is_marked_variable(var_xml))
                 continue;
-            class_def.elements.push_back(SharedVariable{var_xml, class_def.definition_namespace});
+            SharedVariable element(var_xml, class_def.definition_namespace);
+            // if type was not fully resolved, because there was a template alias used,
+            // we resolve it.
+            if(type_resolve_map.count(element.type->refid) != 0)
+            {
+                element.type = type_resolve_map[element.type->refid];
+            }
+
+            class_def.elements.push_back(element);
         }
         find_class_definitions(AST_class_xmls, class_def.elements, class_definitions);
         class_definitions.insert({var_type_hash, std::move(class_def)});
