@@ -34,11 +34,13 @@ struct SharedVariable
 
         std::string print() const
         {
-            std::string buf = refid + "<";
+            std::string buf = refid;
             for (size_t i = 0; i < template_types.size(); i++)
             {
+                if (i == 0) buf += "<";
                 buf += template_types[i]->print();
-                buf += i==template_types.size()-1 ? ">" : ", ";
+                if (i==template_types.size()-1) buf += ">";
+                else buf += ",";
             }
             return buf;
         }
