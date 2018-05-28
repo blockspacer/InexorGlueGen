@@ -29,10 +29,15 @@ bool is_marked_variable(const xml_node &member_xml)
     return false;
 }
 
-string get_namespace_of_namespace_file(const xml_node compound_xml)
+/// Returns the vector of the namespace of this AST xml, split by ::
+/// There are different AST xmls for not namespaced code and code inside namespaces.
+const vector<string> get_namespace_of_namespace_file(const xml_node compound_xml)
 {
-    bool isnamespacefile = string(compound_xml.attribute("kind").value()) == "namespace";
-    return isnamespacefile ? get_complete_xml_text(compound_xml.child("compoundname")) : "";
+    if(string(compound_xml.attribute("kind").value()) != "namespace") // not a ns file
+        return vector<string>();
+
+    const string ns_str = get_complete_xml_text(compound_xml.child("compoundname"));
+    return split_by_delimiter(ns_str, "::");
 }
 
 /// The recursively executable part of the nested_type2typetree parser.
@@ -126,8 +131,8 @@ SharedVariable::type_node_t *get_type_tree(const vector<xml_node> &type_nodes)
 }
 
 /// Takes xml variable nodes and returns a new SharedVar according to it.
-SharedVariable::SharedVariable(const xml_node &var_xml, const string &var_namespace) :
-        name(get_complete_xml_text(var_xml.child("name")))
+SharedVariable::SharedVariable(const xml_node &var_xml, const vector<string> &var_namespace) :
+        name(get_complete_xml_text(var_xml.child("name"))), var_namespace(var_namespace)
 {
     // e.g. SharedVar<int>
     const string type_lit = get_complete_xml_text(var_xml.child("type"));
@@ -153,7 +158,7 @@ void find_shared_var_occurences(const pugi::xml_node &compound_xml, std::vector<
     //     section("define")..
 
     // all vars in one xml file are in the same ns, thanks doxygen.
-    const string ns_of_vars = get_namespace_of_namespace_file(compound_xml);
+    const vector<string> ns_of_vars = get_namespace_of_namespace_file(compound_xml);
 
     for(const auto &section : compound_xml.children("sectiondef"))
     {
@@ -183,41 +188,7 @@ const std::vector<SharedVariable> find_shared_var_occurences(const std::vector<s
 
 // -------------------------------
 using namespace kainjow;
-/// Adds the entries namespace_sep_{open|close} to the templatedata given.
-/// open is e.g. "namespace inexor { namespace rendering {" close is "} }"
-void add_namespace_seps_templatedata(mustache::data &templdata, string ns_str)
-{
-    vector<string> ns(split_by_delimiter(ns_str, "::"));
 
-    mustache::data namespace_sep_open{kainjow::mustache::lambda{
-        [ns](const string&)
-    {
-        std::stringstream ss;
-        for(auto &tok : ns)
-        {
-            if(tok.empty())continue;
-            ss << "namespace ";
-            ss << tok;
-            ss << " { ";
-        }
-        return ss.str();
-    }}};
-
-    mustache::data namespace_sep_close{kainjow::mustache::lambda{
-        [ns](const std::string&)
-    {
-        std::stringstream ss;
-        for(auto &tok : ns)
-        {
-            if(tok.empty())continue;
-            ss << " }";
-        }
-        return ss.str();
-    }}};
-
-    templdata.set("namespace_sep_open", namespace_sep_open);
-    templdata.set("namespace_sep_close", namespace_sep_close);
-}
 /*
 TODO:
 
@@ -262,9 +233,11 @@ mustache::data get_shared_var_templatedata(const SharedVariable &var)
 //    curvariable.set("name_cpp_full", node.get_name_cpp_full());
 //    curvariable.set("name_cpp_short", node.get_name_cpp_short());
     mustache::data ns{mustache::data::type::list};
+    for(const string &ns_part : var.var_namespace)
+        ns.push_back(mustache::data(ns_part));
    // ns.push_back( var.var_namespace)
-    curvariable.set("var_namespace", ns);
-    curvariable.set("var_name", var.name);
+    curvariable.set("namespace", ns);
+    curvariable.set("name", var.name);
     curvariable.set("index", get_index_incrementer());
 
   //  add_namespace_seps_templatedata(curvariable, node.get_namespace());
