@@ -159,9 +159,9 @@ mustache::data get_shared_class_templatedata(const shared_class_definition &def)
 {
     mustache::data cur_definition{mustache::data::type::object};
     // The class needs to be defined in a cleanly includeable header file.
-    cur_definition.set("definition_header", def.definition_header);
+    cur_definition.set("header", def.definition_header);
 
-    cur_definition.set("class_name", def.class_name);
+    cur_definition.set("name", def.class_name);
    // cur_definition.set("definition_name_unique", def.get_name_unique());
 /*
     add_options_templatedata(cur_definition, def.attached_options, ctx);
@@ -194,15 +194,15 @@ mustache::data get_shared_class_templatedata(const shared_class_definition &def)
         }
     cur_definition.set("instances", all_instances);
 
+            */
     mustache::data members{mustache::data::type::list};
 
     int local_index = 2;
-    for(SharedVariable &child : def.elements)
+    for(const SharedVariable &child : def.elements)
     {
-    //    members << get_shared_var_templatedata(*child, local_index++, ctx);
+        members.push_back(get_shared_var_templatedata(child, local_index++));
     }
     cur_definition.set("members", members);
-            */
     return cur_definition;
 }
 
