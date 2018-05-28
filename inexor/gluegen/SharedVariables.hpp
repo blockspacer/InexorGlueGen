@@ -77,4 +77,7 @@ extern bool is_marked_variable(const pugi::xml_node &member_xml);
 extern kainjow::mustache::data print_shared_var_occurences(const std::vector<SharedVariable> &shared_var_occurences);
         //shared_attribute_definitions);
 // Problem: an der stelle nicht attribute definitions inkludieren wollen, aber müssen um jeweils alle attachten attributes zu printen
+
+/// Print all data corresponding to a specific shared variable, set an index for each.
+extern kainjow::mustache::data get_shared_var_templatedata(const SharedVariable &var, size_t index);
 } } // namespace inexor::gluegen
