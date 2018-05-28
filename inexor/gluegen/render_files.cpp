@@ -37,7 +37,8 @@ void render_files(mustache::data &tmpldata, const std::vector<std::string> &part
         // template data is just for this file, since we are adding partials
         mustache::data local_tmpldata(tmpldata);
 
-        // firstly render all partials, each adding its contents to the template data
+        // firstly add all defined partials, each adding its contents to the template data
+        // the content will be executed in place.
         for (auto &a : xml->children("partial"))
         {
             const string partial_name = a.attribute("name").value();
@@ -46,10 +47,9 @@ void render_files(mustache::data &tmpldata, const std::vector<std::string> &part
             if(!tmpl.is_valid())
                 std::cout << "Error in template file (" << file << "). Malformatted partial (" << partial_name << "):\n"
                             << tmpl.error_message() << std::endl;
-
-            const string partial_value = tmpl.render(local_tmpldata);
-
-            std::cout << partial_name << ": " << partial_value;
+            kainjow::mustache::partial partial_value([partial_templ]() {
+                return partial_templ;
+            });
             local_tmpldata.set(partial_name, partial_value);
         }
 
