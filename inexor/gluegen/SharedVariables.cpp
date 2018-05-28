@@ -209,17 +209,7 @@ first:
   map: SharedMap<unordered_map>
  */
 
-/// Index is a very special data entry: every time it gets referenced it gets iterated!
-mustache::partial get_index_incrementer(bool reset = false)
-{
-    return kainjow::mustache::partial([reset]() {
-        static int count = 21;
-        if(reset) count = 20;
-        return to_string(count++);
-    });
-}
-
-mustache::data get_shared_var_templatedata(const SharedVariable &var)
+mustache::data get_shared_var_templatedata(const SharedVariable &var, size_t index)
 {
     mustache::data curvariable{mustache::data::type::object};
     // These is a hacky way to distinct between these in pure-data form.. TODO embedd logic in template?
@@ -238,21 +228,20 @@ mustache::data get_shared_var_templatedata(const SharedVariable &var)
    // ns.push_back( var.var_namespace)
     curvariable.set("namespace", ns);
     curvariable.set("name", var.name);
-    curvariable.set("index", get_index_incrementer());
-
-  //  add_namespace_seps_templatedata(curvariable, node.get_namespace());
+    curvariable.set("index", to_string(index));
 
    // add_options_templatedata(curvariable, node.attached_options, data);
     return curvariable;
 }
-        
+
 kainjow::mustache::data print_shared_var_occurences(const std::vector<SharedVariable> &shared_var_occurences)
 {
+    int index = 21;
     mustache::data sharedvars{mustache::data::type::list};
 
     for(const auto &shared_var : shared_var_occurences)
     {
-        sharedvars << get_shared_var_templatedata(shared_var);
+        sharedvars.push_back(get_shared_var_templatedata(shared_var, index++));
     }
     return sharedvars;
 }
