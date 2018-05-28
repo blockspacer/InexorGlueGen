@@ -60,7 +60,8 @@ struct SharedVariable
     std::string attached_attributes_literal;
 
     /// Constructs a new SharedVar after parsing a xml variable node.
-    SharedVariable(const pugi::xml_node &var_xml, const std::string &var_namespace);
+    SharedVariable(const pugi::xml_node &var_xml, const std::vector<std::string> &var_namespace);
+
     ~SharedVariable()
     {
        // delete type;

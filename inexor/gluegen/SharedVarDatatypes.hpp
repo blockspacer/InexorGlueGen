@@ -20,10 +20,10 @@ struct shared_class_definition
     /// We can search for it and every instance contains this refid somewhere.
     std::string refid;
 
-    /// The namespace of the SharedClass definition e.g. "inexor::metainfo"
+    /// The namespace of the SharedClass definition e.g. "inexor, metainfo"
     /// @warning this could be some other namespace as the instances one!
     ///          for example you could have a inexor::metainfo::Screen inexor::rendering::screen1;
-    std::string definition_namespace;
+    std::vector<std::string> definition_namespace;
 
     /// We REQUIRE the file to be defined in a cleanly includeable headerfile.
     /// (There is no chance of using forward declarations of the class for the synchronisation code.)

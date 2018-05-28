@@ -20,14 +20,13 @@ namespace inexor { namespace gluegen {
 /// Split a variable or class definition name into namespace part and the short name.
 /// i.e. split inexor::rendering::Screen into "inexor::rendering" and "Screen"
 /// @return std::pair {namespace, name}
-std::pair <const string, const string> split_into_namspace_and_name(const string &full_name)
+std::pair <const vector<string>, const string> split_into_namspace_and_name(const string &full_name)
 {
     vector<string> ns_and_name(split_by_delimiter(full_name, "::"));
 
     const string name{ns_and_name.back()};
     ns_and_name.pop_back();
-    const string _namespace = join(ns_and_name, "::");
-    return {_namespace, name};
+    return {ns_and_name, name};
 };
 
 /// Return the header file a given class was defined in.
