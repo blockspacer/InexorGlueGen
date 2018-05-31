@@ -43,7 +43,4 @@ extern void find_class_definitions(const std::unordered_map<std::string, std::un
                                    const std::vector<SharedVariable> &shared_vars,
                                    std::unordered_map<std::string, shared_class_definition> &class_definitions);
 
-extern kainjow::mustache::data print_type_definitions(
-                    const std::unordered_map<std::string, shared_class_definition> &type_definitions);
-                                                          //, shared_attribute_definitions);
 } } // namespace inexor::gluegen
