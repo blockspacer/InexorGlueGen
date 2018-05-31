@@ -1,9 +1,10 @@
 
-#include "inexor/gluegen/ASTs.hpp"
+#include "inexor/gluegen/print_data.hpp"
 #include "inexor/gluegen/render_files.hpp"
 #include "inexor/gluegen/SharedAttributes.hpp"
 #include "inexor/gluegen/SharedVariables.hpp"
 #include "inexor/gluegen/SharedVarDatatypes.hpp"
+#include "inexor/gluegen/ASTs.hpp"
 
 #include <boost/program_options.hpp>
 
@@ -177,20 +178,105 @@ partition data flow, partition specific use case ->
 search for similar use cases ->
 generalization + putting adapters in place
 // TODO:
+1. write sharedvar class to allow reflection markers
+2. write partials
 
-1. filenames ---
-2. data structures in files
-- was wird gesucht?
-- was ist mit options?---
-3. methodennamen + functional_classes (factories?)
-4. bugfixen
 */
 // Later:
-//     Optimization:
-//       - if the type is already made accessible, skip it.
+//   - add SharedOptions
 //   - take care of saving the real typename when dealing with nested class definitions
 //         def x { def y };
 //         x::y a;
 //         x is not the namespace, but the containing class.
+
+/*
+ * a list with special types can be defined, which either define an endpoint or a not-endpoint if it is a template
+ *
+* end:
+ *      Vater ist gekennzeichnet, kind nicht: endpoint
+ *      geht danach nicht weiter, weil nächstes kein element markiert hat.
+ *      SharedVar<x>... x in int, string, char *, float, bool == class without usable elements
+ *      unmarkiert?: int, string, char *, ...
+ *      unmarkiert ->
+ *      markiert: SharedVar
+* bridge:
+ *      vater markiert, kind markiert
+ *      is_player_t
+* wrapper:
+ *      markiert: SharedList<SharedVar<int>>
+ *      element: std::list<SharedVar<int>> markiert, aber könnte list oder was auch immer sein.
+ *
+ *
+ *      vater wie "sharedlist", wird gekennzeichnet, kind nicht.
+ *      geht danach weiter, da kind markiert (als nicht-interessant? oder einfach in template nicht kind immer über namen sondern
+ *      auch als anonymous_ones)
+ *      sharedlist, sharedmap, sharedvector
+* zwischen:
+ *      pointer (autoderefernce?)
+ *      enum (expr unfolding,
+ *
+ * synccode anhängen
+ *      mittel:
+ *      friend class
+ *      problem: immer alles in class
+ *      positiv: auch list, map, vector machbar?
+ *
+ *
+ *      TODO:
+ *      1. class member type lookup with refid
+ *      3. <typename == xy> in templatedata
+ *      2. template wird aufgelöst
+ *      4. children in templatedata
+ *
+ *      3. rumprobieren mit markierung und wrapper und endpoint szenario (zuerst endpoint)
+ *
+ *      wieso hab ich umgestellt?
+ *      - weil ich was gemacht hab -> ein eintrag weniger wichtig für mich ab jetzt
+ *      - weil ich gemerkt hab, dass man noch zwischenschritt braucht
+ *      - weil ich dachte, der eine zwischenschritt kommt besser vor dem anderen
+ *
+ *      abstraktionspfad in todoliste inexor/gluegen/rendering-template-machen ist große schublade, mit kleineren schubladen
+ */
+
+/*
+TODO:
+
+partial instead:
+"namespace_sep_open": "{{#namespace}}{{name}} { {{/namespace}}"
+"namespace_sep_close": "{{#namespace}} } {{/namespace}}"
+"full_name": "{{#namespace}}{{.}}::{{/namespace}}{{name}}"
+"path": "
+"name_unique"
+
+first:
+str name, list namespace, string full_type
+char *: SharedVar<char *> is_sharedvar. member: is_cstring
+int: SharedVar<int> important: inner, ignored: outer
+list: SharedList<vector> important: outer, ignored: inner
+list: SharedList<list>
+map: SharedMap<map>
+map: SharedMap<unordered_map>
+*/
+// Problem: sharedvar.print wird von datatype.element.print() benötigt.
+//          sharedavar.type.print  braucht datatype.print()
+// 1. print kein element von sharedvar und datatyp, sondern so, dass alles
+//        gleichzeitig abgehandelt wird
+// 2. print kein element von
+// TODO: Avoid cyclic dependency between datatype and Sharedvar
+    // when creating curvariable.print() to datatype.print() dependency.
+    // 1. make DataPrinter()
+    //      - includes var and datatype and leaves both incomplete in header
+    //      - if not incomplete: dependency on both in the header
+    //
+    // to dataprinter, but it would become a superheader
+    // (every other must include dataprinter not sharedvar and datatype).
+    // weeird, doesn't matter?
+    // second option is to make the interface not use both
+// TODO: Rename to *-Shared
+// TODO: translate all of RPC_bindings.generated.cpp
+// TODO: translate all of tree.generated.proto
+// TODO: add sharedvarattributes
+//
+// TODO: make server code use nested classes
     return 0;
 }
