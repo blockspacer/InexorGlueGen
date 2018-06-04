@@ -54,15 +54,20 @@ mustache::data print_type_definitions(const unordered_map<string, shared_class_d
 
 /// Print all data corresponding to a specific shared variable, set an index for each.
 mustache::data get_shared_var_templatedata(const SharedVariable &var,
-                                        //   const unordered_map<string, shared_class_definition> &type_definitions,
+                                           const unordered_map<string, shared_class_definition> &type_definitions,
                                            size_t index)
 {
     mustache::data curvariable{mustache::data::type::object};
-    // These is a hacky way to distinct between these in pure-data form.. TODO embedd logic in template?
-//    curvariable.set("is_int", node.type == node.type ? mustache::data::type::bool_true : mustache::data::type::bool_false);
-//    curvariable.set("is_float", node.get_type_numeric()== node.t_float ? mustache::data::type::bool_true : mustache::data::type::bool_false);
-//    curvariable.set("is_string", node.get_type_numeric()== node.t_cstring ? mustache::data::type::bool_true : mustache::data::type::bool_false);
-//    curvariable.set("is_class", node.node_type==ShTreeNode::NODE_CLASS_VAR ? mustache::data::type::bool_false : mustache::data::type::bool_true);
+    if(type_definitions.count(var.type->print()))
+    {
+        const auto &classdef = type_definitions.find(var.type->print())->second;
+        curvariable.set("is_" + classdef.class_name, mustache::data::type::bool_true);
+    } else {
+        // its not a class, which was found, but either an unresolved class type (without refid) or a builtin type
+        // (int, float..)
+        curvariable.set("is_" + var.type->refid, mustache::data::type::bool_true);
+    }
+
     //if(local_index>0) curvariable.set("local_index", std::to_string(local_index));
 
     mustache::data ns{mustache::data::type::list};
@@ -76,14 +81,15 @@ mustache::data get_shared_var_templatedata(const SharedVariable &var,
     return curvariable;
 }
 
-kainjow::mustache::data print_shared_var_occurences(const std::vector<SharedVariable> &shared_var_occurences)
+kainjow::mustache::data print_shared_var_occurences(const std::vector<SharedVariable> &shared_var_occurences,
+                                        const unordered_map<string, shared_class_definition> &type_definitions)
 {
     int index = 21;
     mustache::data sharedvars{mustache::data::type::list};
 
     for(const auto &shared_var : shared_var_occurences)
     {
-        sharedvars.push_back(get_shared_var_templatedata(shared_var, index++));
+        sharedvars.push_back(get_shared_var_templatedata(shared_var, type_definitions, index++));
     }
     return sharedvars;
 }

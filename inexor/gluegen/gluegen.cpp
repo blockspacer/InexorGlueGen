@@ -97,7 +97,7 @@ int main(int argc, const char **argv)
     // add print functions to each type.
     mustache::data template_base_data{mustache::data::type::object};
     template_base_data.set("type_definitions", print_type_definitions(type_definitions));
-    template_base_data.set("variables", print_shared_var_occurences(var_occurences));
+    template_base_data.set("variables", print_shared_var_occurences(var_occurences, type_definitions));
 
     template_base_data.set("file_comment", "// This file gets generated!\n"
             "// Do not modify it directly but its corresponding template file instead!");
