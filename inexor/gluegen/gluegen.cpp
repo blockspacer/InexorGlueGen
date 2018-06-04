@@ -80,7 +80,7 @@ int main(int argc, const char **argv)
     }
 
     const vector<string> template_files = cli_config["template_file"].as<vector<string>>();
-    const vector<string> partial_files = cli_config.count("help") ? cli_config["partial_file"].as<vector<string>>() : vector<string>();
+    const vector<string> partial_files = cli_config.count("partial_file") ? cli_config["partial_file"].as<vector<string>>() : vector<string>();
     const string xml_AST_folder = cli_config["doxygen_AST_folder"].as<string>();
 
     ASTs code;
