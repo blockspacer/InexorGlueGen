@@ -52,15 +52,38 @@ mustache::data print_type_definitions(const unordered_map<string, shared_class_d
 
 }
 
+const string print_cpp_type(const SharedVariable::type_node_t &type,
+                      const unordered_map<string, shared_class_definition> &type_definitions)
+{
+    std::string buf;
+
+    // either add the class name (if we can resolve it) or the class_name
+    if (type_definitions.count(type.uniqueID()))
+    {
+        buf = type_definitions.find(type.uniqueID())->second.class_name;
+    } else {
+        buf = type.refid;
+    }
+
+    for (size_t i = 0; i < type.template_types.size(); i++)
+    {
+        if (i == 0) buf += "<";
+        buf += print_cpp_type(*type.template_types[i], type_definitions);
+        if (i==type.template_types.size()-1) buf += ">";
+        else buf += ",";
+    }
+    return buf;
+}
+
 /// Print all data corresponding to a specific shared variable, set an index for each.
 mustache::data get_shared_var_templatedata(const SharedVariable &var,
                                            const unordered_map<string, shared_class_definition> &type_definitions,
                                            size_t index)
 {
     mustache::data curvariable{mustache::data::type::object};
-    if(type_definitions.count(var.type->print()))
+    if(type_definitions.count(var.type->uniqueID()))
     {
-        const auto &classdef = type_definitions.find(var.type->print())->second;
+        const auto &classdef = type_definitions.find(var.type->uniqueID())->second;
         curvariable.set("is_" + classdef.class_name, mustache::data::type::bool_true);
     } else {
         // its not a class, which was found, but either an unresolved class type (without refid) or a builtin type
@@ -68,6 +91,7 @@ mustache::data get_shared_var_templatedata(const SharedVariable &var,
         curvariable.set("is_" + var.type->refid, mustache::data::type::bool_true);
     }
 
+    curvariable.set("type_cpp", print_cpp_type(*var.type, type_definitions));
     //if(local_index>0) curvariable.set("local_index", std::to_string(local_index));
 
     mustache::data ns{mustache::data::type::list};

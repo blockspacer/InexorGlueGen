@@ -32,13 +32,13 @@ struct SharedVariable
                 delete template_types[i];
         }
 
-        std::string print() const
+        std::string uniqueID() const
         {
             std::string buf = refid;
             for (size_t i = 0; i < template_types.size(); i++)
             {
                 if (i == 0) buf += "<";
-                buf += template_types[i]->print();
+                buf += template_types[i]->uniqueID();
                 if (i==template_types.size()-1) buf += ">";
                 else buf += ",";
             }
