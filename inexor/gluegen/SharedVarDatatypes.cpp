@@ -98,7 +98,7 @@ void find_class_definitions(const unordered_map<string, unique_ptr<xml_document>
 {
     for(const auto &var : shared_vars)
     {
-        string var_type_hash = var.type->print();
+        string var_type_hash = var.type->uniqueID();
         if(class_definitions.count(var_type_hash) != 0)
             // already a known type
             continue;
