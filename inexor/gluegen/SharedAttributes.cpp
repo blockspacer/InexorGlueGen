@@ -91,7 +91,7 @@ name_defaultvalue_vector find_attributes_class_const_char_members(attribute_defi
 const attribute_definition parse_shared_attribute_definition(const xml_node &compound_xml)
 {
     attribute_definition opt(get_complete_xml_text(compound_xml.child("compoundname")));
-    std::cout << "Sharedattribute-derived class definition found: " << opt.name << std::endl;
+    std::cout << "SharedAttribute-derived class definition found: " << opt.name << std::endl;
 
     opt.constructor_args = find_so_constructors_args(opt, compound_xml);
     opt.const_char_members = find_attributes_class_const_char_members(opt, compound_xml);
@@ -101,10 +101,10 @@ const attribute_definition parse_shared_attribute_definition(const xml_node &com
     return opt;
 }
 
-const std::unordered_map<std::string, attribute_definition>
-    parse_shared_attribute_definitions(const std::vector<std::unique_ptr<pugi::xml_document>> AST_xmls)
+const unordered_map<string, attribute_definition>
+    parse_shared_attribute_definitions(const vector<unique_ptr<xml_document>> &AST_xmls)
 {
-    std::unordered_map<std::string, attribute_definition> attribute_definitions;
+    unordered_map<string, attribute_definition> attribute_definitions;
     for(const auto &ast : AST_xmls) {
         xml_node compound_ast = ast->child("doxygen").child("compounddef");
         auto opt = parse_shared_attribute_definition(compound_ast);

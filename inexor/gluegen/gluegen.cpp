@@ -86,8 +86,7 @@ int main(int argc, const char **argv)
     ASTs code;
     code.load_from_directory(xml_AST_folder);
 
-    // options definitions need to get parsed before anything else, since you look for them when parsing the vars/functions/classes..
-// auto shared_attribute_definitions = parse_shared_attribute_definitions(code.attribute_class_xmls);
+    auto shared_attribute_definitions = parse_shared_attribute_definitions(code.attribute_class_xmls);
 
     auto var_occurences = find_shared_var_occurences(code.code_xmls);
 

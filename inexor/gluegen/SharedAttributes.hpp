@@ -57,8 +57,7 @@ struct attribute_definition
 /// Parses all shared attribute ASTs and return the resulting shared_attributes map.
 /// Key of the resulting map: name of attribute
 extern const std::unordered_map<std::string, attribute_definition>
-    parse_shared_attribute_definitions(std::vector<std::unique_ptr<pugi::xml_document>> AST_xmls);
-
+    parse_shared_attribute_definitions(const std::vector<std::unique_ptr<pugi::xml_document>> &AST_xmls);
 
 /// A Sharedattribute instance **used** when instancing a variable or class.
 /// I.e. "SharedVar<int> xy(Default(0)|NoSync()|Persistent(true))".
