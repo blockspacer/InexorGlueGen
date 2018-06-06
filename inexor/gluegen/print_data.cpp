@@ -16,44 +16,11 @@ using namespace std;
 
 namespace inexor {
 namespace gluegen {
-/// Create a shared class definition which the
-/// \param def
-/// \param ctx
-/// \param add_instances
-/// \return
-mustache::data get_shared_class_templatedata(const shared_class_definition &def,
-                                             const unordered_map<string, shared_class_definition> &type_definitions)
-{
-    mustache::data cur_definition{mustache::data::type::object};
-    // The class needs to be defined in a cleanly includeable header file.
-    cur_definition.set("header", def.definition_header);
 
-    cur_definition.set("name", def.class_name);
-    mustache::data members{mustache::data::type::list};
 
-    int local_index = 2;
-    for(const SharedVariable &child : def.elements)
-    {
-    //    members.push_back(get_shared_var_templatedata(child, type_definitions, local_index++));
-    }
-    cur_definition.set("members", members);
-    return cur_definition;
-}
-
-mustache::data print_type_definitions(const unordered_map<string, shared_class_definition> &type_definitions)
-{
-    mustache::data sharedclasses{mustache::data::type::list};
-
-    for(const auto &class_def : type_definitions)
-    {
-        sharedclasses.push_back(get_shared_class_templatedata(class_def.second, type_definitions));
-    }
-    return sharedclasses;
-
-}
-
+/// Print a type with template arguments from a type_node_t. Output e.g. "sharedvar<int, int>"
 const string print_cpp_type(const SharedVariable::type_node_t &type,
-                      const unordered_map<string, shared_class_definition> &type_definitions)
+                            const unordered_map<string, shared_class_definition> &type_definitions)
 {
     std::string buf;
 
@@ -106,7 +73,7 @@ mustache::data get_shared_var_templatedata(const SharedVariable &var,
 }
 
 kainjow::mustache::data print_shared_var_occurences(const std::vector<SharedVariable> &shared_var_occurences,
-                                        const unordered_map<string, shared_class_definition> &type_definitions)
+                                                    const unordered_map<string, shared_class_definition> &type_definitions)
 {
     int index = 21;
     mustache::data sharedvars{mustache::data::type::list};
@@ -117,4 +84,41 @@ kainjow::mustache::data print_shared_var_occurences(const std::vector<SharedVari
     }
     return sharedvars;
 }
+
+/// Create a shared class definition which the
+/// \param def
+/// \param ctx
+/// \param add_instances
+/// \return
+mustache::data get_shared_class_templatedata(const shared_class_definition &def,
+                                             const unordered_map<string, shared_class_definition> &type_definitions)
+{
+    mustache::data cur_definition{mustache::data::type::object};
+    // The class needs to be defined in a cleanly includeable header file.
+    cur_definition.set("header", def.definition_header);
+
+    cur_definition.set("name", def.class_name);
+    mustache::data members{mustache::data::type::list};
+
+    int local_index = 2;
+    for(const SharedVariable &child : def.elements)
+    {
+        members.push_back(get_shared_var_templatedata(child, type_definitions, local_index++));
+    }
+    cur_definition.set("members", members);
+    return cur_definition;
+}
+
+mustache::data print_type_definitions(const unordered_map<string, shared_class_definition> &type_definitions)
+{
+    mustache::data sharedclasses{mustache::data::type::list};
+
+    for(const auto &class_def : type_definitions)
+    {
+        sharedclasses.push_back(get_shared_class_templatedata(class_def.second, type_definitions));
+    }
+    return sharedclasses;
+
+}
+
 } } // ns inexor::gluegen
