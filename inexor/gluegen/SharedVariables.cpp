@@ -40,60 +40,59 @@ const vector<string> get_namespace_of_namespace_file(const xml_node compound_xml
     return split_by_delimiter(ns_str, "::");
 }
 
-/// The recursively executable part of the nested_type2typetree parser.
+/// The recursively executable part of the type_parser.
 /// An item is an entry in a vector of either refids or delimitiers of a type with templates.
 /// It takes an iterator and increases it until the complete type_t<....> is handled
 /// Afterwards it returns the type.
 /// The parent stack is used, since
 /// 1. type_t<type2_t<...>, type3_t> shouldn't assign type_3_t as child of type_2_t.
 /// 2. type_t<type2_t<type3_t<int>>, type4_t> needs to handle ">>," in one run, since it is one item.
-SharedVariable::type_node_t *get_type_tree(vector<xml_node>::const_iterator &it,
+void type_part_parser(vector<xml_node>::const_iterator &it,
                  const vector<xml_node>::const_iterator &end,
-                 vector<SharedVariable::type_node_t *> &parent_stack)
+                 SharedVariable::type_node_t *parent)
 {
-    // the actual name
-    SharedVariable::type_node_t *node = new SharedVariable::type_node_t();
+    if (!parent) return;
 
-    node->refid = it->attribute("refid").value();
+    if (!parent->refid.empty()) {
+        parent->template_types.emplace_back();
+        parent->template_types.back().parent = parent;
+    }
+    SharedVariable::type_node_t &node = !parent->refid.empty() ? parent->template_types.back() : *parent;
+
+    node.refid = it->attribute("refid").value();
     // handle case that there was no refid set -> take the value
-    if (node->refid.empty())
-        node->refid = it->value();
-
-    // add to parents template types.
-    if (!parent_stack.empty())
-        parent_stack.back()->template_types.push_back(node);
+    if (node.refid.empty())
+        node.refid = it->value();
 
     it++;
-    if (it == end) {
-        return node;
-    }
+    if (it == end) return;
+
     // the template arguments
     string delimiter = it->value();
     trim(delimiter);
     if (delimiter == "<") {
-        parent_stack.push_back(node);
-        get_type_tree(++it, end, parent_stack);
+        type_part_parser(++it, end, &node);
     } else if (delimiter == ",") {
-        get_type_tree(++it, end, parent_stack);
+        type_part_parser(++it, end, node.parent);
     } else if (delimiter.find(">") != string::npos) {
+        SharedVariable::type_node_t *parent = node.parent;
         for(auto &c : delimiter) {
             if (c == '>') {
-                if (parent_stack.empty()) break;
-                parent_stack.pop_back();
+                if (!parent || !parent->parent) break;
+                parent = parent->parent;
             }
             else if (c == ',') {
-                get_type_tree(++it, end, parent_stack);
+                type_part_parser(++it, end, parent);
                 break;
             }
         }
         ++it;
     }
-    return node;
 }
 
 /// A vector of <refid|'delimiter_sequence'> gets unfolded into a tree of type refid
 /// with its template types as children.
-SharedVariable::type_node_t *get_type_tree(const vector<xml_node> &type_nodes)
+SharedVariable::type_node_t type_parser(const vector<xml_node> &type_nodes)
 {
     // input e.g. class_out_t< class_a_t, class_b_t<class_b_c_t>>
     // resolved in AST:
@@ -124,10 +123,11 @@ SharedVariable::type_node_t *get_type_tree(const vector<xml_node> &type_nodes)
     //   d.id = class_d_t
     //   root.template_types.push_back(d)
     //>
-    vector<SharedVariable::type_node_t *> parent_stack;
+    SharedVariable::type_node_t root;
 
     vector<xml_node>::const_iterator it = type_nodes.begin();
-    return get_type_tree(it, type_nodes.end(), parent_stack);
+    type_part_parser(it, type_nodes.end(), &root);
+    return std::move(root);
 }
 
 /// Takes xml variable nodes and returns a new SharedVar according to it.
@@ -137,7 +137,7 @@ SharedVariable::SharedVariable(const xml_node &var_xml, const vector<string> &va
     // e.g. SharedVar<int>
     const string type_lit = get_complete_xml_text(var_xml.child("type"));
     auto type_childs = var_xml.child("type").children();
-    type = get_type_tree(vector<xml_node>(type_childs.begin(), type_childs.end()));
+    type = type_parser(vector<xml_node>(type_childs.begin(), type_childs.end()));
 
     // The attached attributes are passed to the reflection_marking.. function as function parameters.
     string initializer = get_complete_xml_text(var_xml.child("initializer"));

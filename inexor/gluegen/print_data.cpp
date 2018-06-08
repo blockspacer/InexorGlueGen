@@ -40,7 +40,7 @@ const string print_full_type(const SharedVariable::type_node_t &type,
     for (size_t i = 0; i < type.template_types.size(); i++)
     {
         if (i == 0) buf += template_open;
-        buf += print_full_type(*type.template_types[i], type_definitions);
+        buf += print_full_type(type.template_types[i], type_definitions);
         if (i==type.template_types.size()-1) buf += template_close;
         else buf += template_seperator;
     }
@@ -53,18 +53,18 @@ mustache::data get_shared_var_templatedata(const SharedVariable &var,
                                            size_t index)
 {
     mustache::data curvariable{mustache::data::type::object};
-    if(type_definitions.count(var.type->uniqueID()))
+    if(type_definitions.count(var.type.uniqueID()))
     {
-        const auto &classdef = type_definitions.find(var.type->uniqueID())->second;
+        const auto &classdef = type_definitions.find(var.type.uniqueID())->second;
         curvariable.set("is_" + classdef.class_name, mustache::data::type::bool_true);
     } else {
         // its not a class, which was found, but either an unresolved class type (without refid) or a builtin type
         // (int, float..)
-        curvariable.set("is_" + var.type->refid, mustache::data::type::bool_true);
+        curvariable.set("is_" + var.type.refid, mustache::data::type::bool_true);
     }
 
-    curvariable.set("type_cpp", print_full_type(*var.type, type_definitions));
-    curvariable.set("type_unique", print_full_type(*var.type, type_definitions, "__", "_", "__"));
+    curvariable.set("type_cpp", print_full_type(var.type, type_definitions));
+    curvariable.set("type_unique", print_full_type(var.type, type_definitions, "__", "_", "__"));
     //if(local_index>0) curvariable.set("local_index", std::to_string(local_index));
 
     mustache::data ns{mustache::data::type::list};
