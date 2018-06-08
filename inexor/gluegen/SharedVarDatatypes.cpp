@@ -64,7 +64,7 @@ shared_class_definition new_shared_class_definition(const xml_node &compound_xml
 ///
 /// This map will be used when constructing any member variables where the type is an alias.
 void add_template_type_alias(const xml_node &compound_xml, const SharedVariable::type_node_t *const type,
-                             unordered_map<string, SharedVariable::type_node_t *> &map)
+                             unordered_map<string, const SharedVariable::type_node_t *> &map)
 {
     if (!compound_xml.child("templateparamlist"))
         return;
@@ -87,7 +87,7 @@ void add_template_type_alias(const xml_node &compound_xml, const SharedVariable:
                       << "Class in question is " << compound_xml.child("compoundname").child_value() << std::endl;
             std::exit(1);
         }
-        map.emplace(param_words[1], type->template_types[i]);
+        map.emplace(param_words[1], &type->template_types[i]);
         i++;
     }
 }
@@ -98,23 +98,23 @@ void find_class_definitions(const unordered_map<string, unique_ptr<xml_document>
 {
     for(const auto &var : shared_vars)
     {
-        string var_type_hash = var.type->uniqueID();
+        string var_type_hash = var.type.uniqueID();
         if(class_definitions.count(var_type_hash) != 0)
             // already a known type
             continue;
 
-        if(AST_class_xmls.find(var.type->refid) == AST_class_xmls.end()) {
+        if(AST_class_xmls.find(var.type.refid) == AST_class_xmls.end()) {
             std::cerr << "ERROR: variable '" << var.name << "'has been marked for reflection, but type is not known.\n"
                       << "type in question is " << var_type_hash << std::endl;
             continue;
         }
-        const xml_node &compound_xml = AST_class_xmls.at(var.type->refid)->child("doxygen").child("compounddef");
+        const xml_node &compound_xml = AST_class_xmls.at(var.type.refid)->child("doxygen").child("compounddef");
 
         shared_class_definition class_def = new_shared_class_definition(compound_xml);
 
         // get all template parameters for this class and see what the instance maps them to.
-        unordered_map<string, SharedVariable::type_node_t *>  type_resolve_map;
-        add_template_type_alias(compound_xml, var.type, type_resolve_map);
+        unordered_map<string, const SharedVariable::type_node_t *>  type_resolve_map;
+        add_template_type_alias(compound_xml, &var.type, type_resolve_map);
 
         // Supported template use cases:
         // 1. class/typename can be used
@@ -137,12 +137,13 @@ void find_class_definitions(const unordered_map<string, unique_ptr<xml_document>
             SharedVariable element(var_xml, class_def.definition_namespace);
             // if type was not fully resolved, because there was a template alias used,
             // we resolve it.
-            if(type_resolve_map.count(element.type->refid) != 0)
+            if(type_resolve_map.count(element.type.refid) != 0)
             {
-                element.type = type_resolve_map[element.type->refid];
+                // the type element always ones the type ptr, therefore create a new one.
+                element.type = *type_resolve_map[element.type.refid];
             }
 
-            class_def.elements.push_back(element);
+            class_def.elements.push_back(std::move(element));
         }
         find_class_definitions(AST_class_xmls, class_def.elements, class_definitions);
         class_definitions.insert({var_type_hash, std::move(class_def)});

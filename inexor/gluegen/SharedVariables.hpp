@@ -25,12 +25,8 @@ struct SharedVariable
     struct type_node_t {
         /// Either the refid of the class or the name of a primitive (int/float/..).
         std::string refid;
-        std::vector<type_node_t *> template_types;
-        ~type_node_t()
-        {
-            for (size_t i = 0; i < template_types.size(); i++)
-                delete template_types[i];
-        }
+        std::vector<type_node_t> template_types;
+        type_node_t *parent = nullptr;
 
         std::string uniqueID() const
         {
@@ -38,7 +34,7 @@ struct SharedVariable
             for (size_t i = 0; i < template_types.size(); i++)
             {
                 if (i == 0) buf += "<";
-                buf += template_types[i]->uniqueID();
+                buf += template_types[i].uniqueID();
                 if (i==template_types.size()-1) buf += ">";
                 else buf += ",";
             }
@@ -46,7 +42,7 @@ struct SharedVariable
         }
     };
 
-    type_node_t *type;
+    type_node_t type;
 
     /// The literal variable name without namespace (e.g. "mapmodel_amount").
     const std::string name;
@@ -62,10 +58,6 @@ struct SharedVariable
     /// Constructs a new SharedVar after parsing a xml variable node.
     SharedVariable(const pugi::xml_node &var_xml, const std::vector<std::string> &var_namespace);
 
-    ~SharedVariable()
-    {
-       // delete type;
-    }
 };
 
 /// Find all marked global variables inside a bunch of AST xml files (as spit out by doxygen) and save them in a vector.
