@@ -12,6 +12,7 @@
 
 namespace inexor { namespace gluegen {
 
+
 struct SharedVariable
 {
     /// The type of a variable can include template arguments
@@ -42,6 +43,17 @@ struct SharedVariable
         }
     };
 
+    /// A Sharedattribute instance **used** when instancing a variable or class.
+    /// I.e. "SharedVar<int> xy(Persistent(true))".
+    /// -> attribute_name = "Persistent" constructor_args.push_back("true").
+    struct attached_attribute
+    {
+        /// The attributes name.
+        std::string name;
+        /// The constructor args for the attribute instance.
+        std::vector<std::string> constructor_args;
+    };
+
     type_node_t type;
 
     /// The literal variable name without namespace (e.g. "mapmodel_amount").
@@ -51,9 +63,8 @@ struct SharedVariable
     /// @note Mind that the type might be defined in a different namespace (i.e. xy::var_t z::variable)
     const std::vector<std::string> var_namespace;
 
-    /// All attributes attached when instancing this variable (without resolving them.).
-    /// e.g. "NoSync()|Persistent()"
-    std::string attached_attributes_literal;
+    /// All attributes attached when instancing this variable.
+    std::vector<attached_attribute> attached_attributes;
 
     /// Constructs a new SharedVar after parsing a xml variable node.
     SharedVariable(const pugi::xml_node &var_xml, const std::vector<std::string> &var_namespace);

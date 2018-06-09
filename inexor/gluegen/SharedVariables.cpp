@@ -130,6 +130,38 @@ SharedVariable::type_node_t type_parser(const vector<xml_node> &type_nodes)
     return std::move(root);
 }
 
+/// Parses " NoSync()|Persistent()|Function([] { echo("hello"); })   "
+vector<SharedVariable::attached_attribute> parse_attached_attributes_string(string attributes_list_str, bool verbose = false)
+{
+    vector<SharedVariable::attached_attribute> attributes;
+    const vector<string> attribute_strings_vec(split_by_delimiter(attributes_list_str, "|")); // tokenize
+
+    for(string raw_str : attribute_strings_vec) // e.g. " NoSync() \n" or Range(0, 3) or Persistent(true)
+    {
+        trim(raw_str);                       // remove any whitespace around normal chars " NoSync(   ) \n" -> "NoSync(   )"
+        SharedVariable::attached_attribute attribute;
+
+        string temp;
+        string argsstr = parse_bracket(raw_str, attribute.name, temp);       // from Range(0, 3) we get "0, 3"
+        attribute.constructor_args = tokenize_arg_list(argsstr);             // "0", " 3"
+        for(string &arg : attribute.constructor_args)                        // "0", "3"
+            trim(arg);
+
+
+        if(verbose)
+        {
+            std::cout << "string: " << raw_str << std::endl;
+            std::cout << "opt name: " << attribute.name << std::endl << "args:";
+            for(auto &i : attribute.constructor_args)
+                std::cout << " " << i;
+            std::cout << std::endl;
+        }
+
+        attributes.push_back(attribute);
+    }
+    return attributes;
+}
+
 /// Takes xml variable nodes and returns a new SharedVar according to it.
 SharedVariable::SharedVariable(const xml_node &var_xml, const vector<string> &var_namespace) :
         name(get_complete_xml_text(var_xml.child("name"))), var_namespace(var_namespace)
@@ -142,7 +174,8 @@ SharedVariable::SharedVariable(const xml_node &var_xml, const vector<string> &va
     // The attached attributes are passed to the reflection_marking.. function as function parameters.
     string initializer = get_complete_xml_text(var_xml.child("initializer"));
     string dummy;
-    attached_attributes_literal = parse_bracket(initializer, dummy, dummy);
+    string attached_attributes_literal = parse_bracket(initializer, dummy, dummy);
+    attached_attributes = parse_attached_attributes_string(attached_attributes_literal);
 }
 
 /// Find all marked shared vars inside a given document AST.
