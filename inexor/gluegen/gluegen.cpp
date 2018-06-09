@@ -86,7 +86,7 @@ int main(int argc, const char **argv)
     ASTs code;
     code.load_from_directory(xml_AST_folder);
 
-    auto shared_attribute_definitions = parse_shared_attribute_definitions(code.attribute_class_xmls);
+    auto attribute_definitions = parse_shared_attribute_definitions(code.attribute_class_xmls);
 
     auto var_occurences = find_shared_var_occurences(code.code_xmls);
 
@@ -95,8 +95,8 @@ int main(int argc, const char **argv)
 
     // add print functions to each type.
     mustache::data template_base_data{mustache::data::type::object};
-    template_base_data.set("type_definitions", print_type_definitions(type_definitions));
-    template_base_data.set("variables", print_shared_var_occurences(var_occurences, type_definitions));
+    template_base_data.set("type_definitions", print_type_definitions(type_definitions, attribute_definitions));
+    template_base_data.set("variables", print_shared_var_occurences(var_occurences, type_definitions, attribute_definitions));
 
     template_base_data.set("file_comment", "// This file gets generated!\n"
             "// Do not modify it directly but its corresponding template file instead!");
