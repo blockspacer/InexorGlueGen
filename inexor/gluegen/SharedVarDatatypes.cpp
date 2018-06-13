@@ -104,13 +104,15 @@ void find_class_definitions(const unordered_map<string, unique_ptr<xml_document>
             continue;
 
         if(AST_class_xmls.find(var.type.refid) == AST_class_xmls.end()) {
-            std::cerr << "ERROR: variable '" << var.name << "'has been marked for reflection, but type is not known.\n"
-                      << "type in question is " << var_type_hash << std::endl;
+        //    std::cerr << "ERROR: variable '" << var.name << "'has been marked for reflection, but type is not known.\n"
+        //              << "type in question is " << var_type_hash << std::endl;
             continue;
         }
         const xml_node &compound_xml = AST_class_xmls.at(var.type.refid)->child("doxygen").child("compounddef");
 
         shared_class_definition class_def = new_shared_class_definition(compound_xml);
+
+        class_def.type_node = var.type;
 
         // get all template parameters for this class and see what the instance maps them to.
         unordered_map<string, const SharedVariable::type_node_t *>  type_resolve_map;

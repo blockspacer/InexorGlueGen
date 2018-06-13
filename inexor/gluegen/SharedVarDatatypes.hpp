@@ -13,6 +13,10 @@ namespace inexor { namespace gluegen {
 
 struct shared_class_definition
 {
+    /// This includes the template argument information.
+    /// E.g. type_node.print() would give you "Screen<int, int>".
+    SharedVariable::type_node_t type_node;
+
     /// The name of the SharedClass e.g. "Screen".
     std::string class_name;
 
