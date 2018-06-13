@@ -207,4 +207,19 @@ mustache::data print_type_definitions(const unordered_map<string, shared_class_d
 
 }
 
+mustache::data print_data(const vector<SharedVariable> &var_occurences,
+                          const unordered_map<string, shared_class_definition> &type_definitions,
+                          const unordered_map<string, attribute_definition> &attribute_definitions)
+{
+    mustache::data data{mustache::data::type::object};
+    data.set("type_definitions", print_type_definitions(type_definitions, attribute_definitions));
+    data.set("variables", print_shared_var_occurences(var_occurences, type_definitions, attribute_definitions));
+
+    data.set("file_comment", "// This file gets generated!\n"
+            "// Do not modify it directly but its corresponding template file instead!");
+    return data;
+
+}
+// TODO: classes defined in classes won't have the right type.
+
 } } // ns inexor::gluegen

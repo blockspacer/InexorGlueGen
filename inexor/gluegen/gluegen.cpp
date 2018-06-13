@@ -93,13 +93,7 @@ int main(int argc, const char **argv)
     unordered_map<string, shared_class_definition> type_definitions;
     find_class_definitions(code.class_xmls, var_occurences, type_definitions);
 
-    // add print functions to each type.
-    mustache::data template_base_data{mustache::data::type::object};
-    template_base_data.set("type_definitions", print_type_definitions(type_definitions, attribute_definitions));
-    template_base_data.set("variables", print_shared_var_occurences(var_occurences, type_definitions, attribute_definitions));
-
-    template_base_data.set("file_comment", "// This file gets generated!\n"
-            "// Do not modify it directly but its corresponding template file instead!");
+    mustache::data template_base_data = print_data(var_occurences, type_definitions, attribute_definitions);
 
     render_files(template_base_data, partial_files, template_files);
 
