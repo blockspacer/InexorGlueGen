@@ -143,8 +143,8 @@ mustache::data get_shared_var_templatedata(const SharedVariable &var,
         curvariable.set("is_" + var.type.refid, mustache::data::type::bool_true);
     }
 
-    curvariable.set("type_cpp", print_full_type(var.type, type_definitions));
-    curvariable.set("type_unique", print_full_type(var.type, type_definitions, "__", "_", "__"));
+    curvariable.set("type_name_cpp", print_full_type(var.type, type_definitions));
+    curvariable.set("type_name_unique", print_full_type(var.type, type_definitions, "__", "_", "__"));
     //if(local_index>0) curvariable.set("local_index", std::to_string(local_index));
 
     mustache::data ns{mustache::data::type::list};
@@ -182,7 +182,9 @@ mustache::data get_shared_class_templatedata(const shared_class_definition &def,
     // The class needs to be defined in a cleanly includeable header file.
     cur_definition.set("header", def.definition_header);
 
-    cur_definition.set("name", def.class_name);
+    cur_definition.set("type_name_short", def.class_name);
+    cur_definition.set("type_name_cpp", print_full_type(def.type_node, type_definitions));
+    cur_definition.set("type_name_unique", print_full_type(def.type_node, type_definitions, "__", "_", "__"));
     mustache::data members{mustache::data::type::list};
 
     int local_index = 2;
