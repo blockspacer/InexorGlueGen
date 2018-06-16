@@ -151,10 +151,6 @@ void add_is_type_member(const SharedVariable::type_node_t &type_node,
                         const unordered_map<string, shared_class_definition> &type_definitions,
                         mustache::data &data)
 {
-    static set<string> all_entries;
-    for (const auto &a : all_entries)
-        data.set("is_" + a, mustache::data::type::bool_false);
-
     string this_classes_ident;
     if(type_definitions.count(type_node.uniqueID()))
     {
@@ -167,7 +163,14 @@ void add_is_type_member(const SharedVariable::type_node_t &type_node,
         data.set("is_builtin_type", mustache::data::type::bool_true);
     }
 
-    data.set("is_" + this_classes_ident, mustache::data::type::bool_true);
+    static set<string> all_entries;
+    for (const auto &a : all_entries)
+    {
+        if (a == this_classes_ident)
+            data.set("is_" + a, mustache::data::type::bool_true);
+        else
+            data.set("is_" + a, mustache::data::type::bool_false);
+    }
     all_entries.insert(this_classes_ident);
 }
 
