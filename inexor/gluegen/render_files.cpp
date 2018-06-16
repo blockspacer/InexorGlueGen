@@ -24,14 +24,18 @@ void save_to_file(const std::string &filepath, const std::string &file_content)
     std::cout << "Rendering C++ GlueGen file completed (" << filepath << ")" << std::endl;
 }
 
-void render_files(mustache::data &tmpldata, const std::vector<std::string> &partial_files, const std::vector<std::string> &template_files)
+void render_files(mustache::data &tmpldata,
+                  const std::vector<std::string> &partial_files,
+                  const std::vector<std::string> &template_files)
 {
     for(const string &file : template_files)
     {
         auto xml = make_unique<xml_document>();
-        if(!xml->load_file(file.c_str(), parse_default|parse_trim_pcdata))
+        pugi::xml_parse_result result = xml->load_file(file.c_str(), parse_default|parse_trim_pcdata);
+        if(!result)
         {
-            std::cout << "XML file defining the rendering template couldn't be parsed: " << file << std::endl;
+            std::cout << "XML file defining the rendering template couldn't be parsed: " << file << "\n"
+            << result.description() << std::endl;
             return;
         }
         // template data is just for this file, since we are adding partials
