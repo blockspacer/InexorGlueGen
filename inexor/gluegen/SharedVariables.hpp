@@ -24,8 +24,12 @@ struct SharedVariable
     ///                                      \
     ///                                 int (refid = classint)
     struct type_node_t {
-        /// Either the refid of the class or the name of a primitive (int/float/..).
+        /// Either the refid of the class or empty.
         std::string refid;
+
+        /// Always the pure type literal. Always non-empty.
+        std::string pure_type;
+
         std::vector<type_node_t> template_types;
         type_node_t *parent = nullptr;
 

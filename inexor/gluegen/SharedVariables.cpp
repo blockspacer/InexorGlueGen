@@ -63,6 +63,7 @@ void type_part_parser(vector<xml_node>::const_iterator &it,
     // handle case that there was no refid set -> take the value
     if (node.refid.empty())
         node.refid = it->value();
+    node.pure_type = it->child_value();
 
     it++;
     if (it == end) return;
@@ -74,6 +75,15 @@ void type_part_parser(vector<xml_node>::const_iterator &it,
         type_part_parser(++it, end, &node);
     } else if (delimiter == ",") {
         type_part_parser(++it, end, node.parent);
+    } else if (delimiter.find("<") != string::npos && delimiter.find(">") != string::npos)
+    {
+        // handle the special case that template members are not known and hence
+        // it is just a blank (constrained) text field (e.g. "< char * >")
+        string type_only = delimiter;
+        remove_surrounding_char(type_only, '<');
+        // TODO this destroys any > parsing afterwards
+        node.refid = "";
+        node.pure_type = type_only;
     } else if (delimiter.find(">") != string::npos) {
         SharedVariable::type_node_t *parent = node.parent;
         for(auto &c : delimiter) {

@@ -9,12 +9,16 @@
 
 #include <kainjow/mustache.hpp>
 
+#include <boost/algorithm/string.hpp>
+
 #include <fstream>
 #include <set>
 
 using namespace pugi;
 using namespace kainjow;
 using namespace std;
+using boost::algorithm::trim;
+using boost::replace_all;
 
 namespace inexor {
 namespace gluegen {
@@ -98,6 +102,17 @@ void add_attributes_templatedata(mustache::data &variable_data,
     variable_data.set("attached_attributes", attached_attributes_data);
 }
 
+string make_pure_type_printable(const string &pure_type)
+{
+    string t = pure_type;
+    replace_all(t, "<", "_");
+    replace_all(t, ">", "_");
+    replace_all(t, "*", "p");
+    replace_all(t, ":", "_");
+    replace_all(t, " ", "_");
+    return std::move(t);
+}
+
 /// Print a type with template arguments from a type_node_t.
 /// Output e.g. "sharedvar<int, int>"
 /// or "sharedvar-int_int-" when non-default separators are given.
@@ -105,7 +120,8 @@ const string print_full_type(const SharedVariable::type_node_t &type,
                             const unordered_map<string, shared_class_definition> &type_definitions,
                             const string template_open = "<",
                             const string template_seperator = ", ",
-                            const string template_close = ">")
+                            const string template_close = ">",
+                            bool make_printable = false)
 {
     std::string buf;
 
@@ -114,14 +130,14 @@ const string print_full_type(const SharedVariable::type_node_t &type,
     {
         buf = type_definitions.find(type.uniqueID())->second.class_name;
     } else {
-        buf = type.refid;
+        buf = make_printable ? make_pure_type_printable(type.pure_type) : type.pure_type;
     }
 
     for (size_t i = 0; i < type.template_types.size(); i++)
     {
         if (i == 0) buf += template_open;
         buf += print_full_type(type.template_types[i], type_definitions,
-                               template_open, template_seperator, template_close);
+                               template_open, template_seperator, template_close, make_printable);
         if (i==type.template_types.size()-1) buf += template_close;
         else buf += template_seperator;
     }
@@ -147,7 +163,7 @@ void add_is_type_member(const SharedVariable::type_node_t &type_node,
     } else {
         // its not a class, which was found, but either an unresolved class type (without refid) or a builtin type
         // (int, float..)
-        this_classes_ident = type_node.refid;
+        this_classes_ident = make_pure_type_printable(type_node.pure_type);
         data.set("is_builtin_type", mustache::data::type::bool_true);
     }
 
@@ -162,7 +178,7 @@ void add_type_node_data(const SharedVariable::type_node_t &type_node,
 {
     add_is_type_member(type_node, type_definitions, data);
     data.set("type_name_cpp", print_full_type(type_node, type_definitions));
-    data.set("type_name_unique", print_full_type(type_node, type_definitions, "__", "_", "__"));
+    data.set("type_name_unique", print_full_type(type_node, type_definitions, "__", "_", "__", true));
 
     mustache::data tmpl_data{mustache::data::type::list};
     for (const auto &t : type_node.template_types)
