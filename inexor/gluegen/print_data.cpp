@@ -119,7 +119,8 @@ const string print_full_type(const SharedVariable::type_node_t &type,
     for (size_t i = 0; i < type.template_types.size(); i++)
     {
         if (i == 0) buf += template_open;
-        buf += print_full_type(type.template_types[i], type_definitions);
+        buf += print_full_type(type.template_types[i], type_definitions,
+                               template_open, template_seperator, template_close);
         if (i==type.template_types.size()-1) buf += template_close;
         else buf += template_seperator;
     }
