@@ -10,6 +10,7 @@
 #include <kainjow/mustache.hpp>
 
 #include <fstream>
+#include <set>
 
 using namespace pugi;
 using namespace kainjow;
@@ -127,22 +128,39 @@ const string print_full_type(const SharedVariable::type_node_t &type,
     return buf;
 }
 
+/// Each variable's templatedata has a "is_typeint" entry.
+/// Since member variables should not have the parents entry, we need to collect all previous definitions and null them
+/// explicitely.
+void add_is_type_member(const SharedVariable::type_node_t &type_node,
+                        const unordered_map<string, shared_class_definition> &type_definitions,
+                        mustache::data &data)
+{
+    static set<string> all_entries;
+    for (const auto &a : all_entries)
+        data.set("is_" + a, mustache::data::type::bool_false);
+
+    string this_classes_ident;
+    if(type_definitions.count(type_node.uniqueID()))
+    {
+        const auto &classdef = type_definitions.find(type_node.uniqueID())->second;
+        this_classes_ident = classdef.class_name;
+    } else {
+        // its not a class, which was found, but either an unresolved class type (without refid) or a builtin type
+        // (int, float..)
+        this_classes_ident = type_node.refid;
+        data.set("is_builtin_type", mustache::data::type::bool_true);
+    }
+
+    data.set("is_" + this_classes_ident, mustache::data::type::bool_true);
+    all_entries.insert(this_classes_ident);
+}
+
 /// Add all template data entries corresponding to the type information of the variable.
 void add_type_node_data(const SharedVariable::type_node_t &type_node,
                         const unordered_map<string, shared_class_definition> &type_definitions,
                         mustache::data &data)
 {
-    if(type_definitions.count(type_node.uniqueID()))
-    {
-        const auto &classdef = type_definitions.find(type_node.uniqueID())->second;
-        data.set("is_" + classdef.class_name, mustache::data::type::bool_true);
-    } else {
-        // its not a class, which was found, but either an unresolved class type (without refid) or a builtin type
-        // (int, float..)
-        data.set("is_" + var.type.refid, mustache::data::type::bool_true);
-        data.set("is_builtin_type", mustache::data::type::bool_true);
-    }
-
+    add_is_type_member(type_node, type_definitions, data);
     data.set("type_name_cpp", print_full_type(type_node, type_definitions));
     data.set("type_name_unique", print_full_type(type_node, type_definitions, "__", "_", "__"));
 
