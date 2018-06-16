@@ -145,6 +145,15 @@ void add_type_node_data(const SharedVariable::type_node_t &type_node,
 
     data.set("type_name_cpp", print_full_type(type_node, type_definitions));
     data.set("type_name_unique", print_full_type(type_node, type_definitions, "__", "_", "__"));
+
+    mustache::data tmpl_data{mustache::data::type::list};
+    for (const auto &t : type_node.template_types)
+    {
+        mustache::data t_data{mustache::data::type::object};
+        add_type_node_data(t, type_definitions, t_data);
+        tmpl_data.push_back(t_data);
+    }
+    data.set("template_types", tmpl_data);
 }
 
 /// Print all data corresponding to a specific shared variable, set an index for each.
