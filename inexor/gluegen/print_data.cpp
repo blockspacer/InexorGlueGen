@@ -23,9 +23,14 @@ using boost::replace_all;
 namespace inexor {
 namespace gluegen {
 
-/// Add templatedata for this shared variable coming from shared attributes.
+/// Add templatedata for this shared variable coming from attributes.
+/// Attached atributes are technically class instances.
+/// If a defined attribute has default values, the attribute should be added to each variable
+/// not having the attribute attached.
+/// Also the default value gets used when the attached attribute does pass all possible constructor parameters
+/// (so the remaining have the default value set)
 void add_attributes_templatedata(mustache::data &variable_data,
-                                 vector<SharedVariable::attached_attribute> attached_attributes,
+                                 const unordered_map<string, SharedVariable::attached_attribute> attached_attributes,
                                  const unordered_map<string, attribute_definition> &attribute_definitions)
 {
     /*
@@ -53,22 +58,23 @@ void add_attributes_templatedata(mustache::data &variable_data,
 
     // add template data from constructor arguments:
     mustache::data attached_attributes_data{mustache::data::type::list};
-    for(const SharedVariable::attached_attribute &attribute : attached_attributes)
+    for(auto &deftupel : attribute_definitions)
     {
-        if(attribute_definitions.find(attribute.name) == attribute_definitions.end()) {
-            // std::cout << "node: " << node.get_name_cpp_full() << " attribute: " << node_attribute.name << std::endl;
-            // this argument is not corresponding with the name of a sharedattribute.
-            continue;
-        }
-
-        const attribute_definition def = attribute_definitions.find(attribute.name)->second;
-
-        if(def.constructor_args.size() < attribute.constructor_args.size()) {
-            // more arguments used for the instance than the declaration allows.
-            std::cout << "Warn: Too much constructor arguments given for " << def.name << std::endl;
-        }
-
+        auto &def = deftupel.second;
         mustache::data constructor_args_data{mustache::data::type::list};
+        // This defined attribute was not found in the list of attached attributes
+        bool attribute_not_attached = false;
+        bool use_default_value = false;
+
+        auto attached_attr_iter = attached_attributes.find(def.name);
+        if(attached_attr_iter == attached_attributes.end())
+        {
+            if (!def.constructor_has_default_values)
+                continue;
+            attribute_not_attached = true;
+            use_default_value = true;
+        }
+
         for(size_t i = 0; i < def.constructor_args.size(); i++)
         {
             const name_defaultvalue_tupel &def_construct_param = def.constructor_args[i];
@@ -77,25 +83,42 @@ void add_attributes_templatedata(mustache::data &variable_data,
 
             mustache::data arg_data{mustache::data::type::object};
             arg_data.set("attr_arg_name", param_name);
+            string param_value;
 
-            if (def_construct_param.default_value.empty()){
-                if (i >= attribute.constructor_args.size()) {
-                    std::cout << "Error: Not enough constructor arguments given for " << def.name << std::endl;
-                    break;
-                }
-                arg_data.set("attr_arg_value", attribute.constructor_args[i]);
-            }
-            else
+
+            if (!attribute_not_attached)
             {
+                const SharedVariable::attached_attribute attribute = attached_attr_iter->second;
+
+                if (i >= attribute.constructor_args.size())
+                {
+                    if (def_construct_param.default_value.empty()) {
+                        // TODO: Do we handle = "" correctly?
+                        std::cout << "Error: Not enough constructor arguments given for " << def.name << std::endl;
+                        break;
+                    }
+                    // incomplete list: take the first params from the caller, the rest is default.
+                    use_default_value = true;
+                }
+            }
+
+            if (use_default_value) {
+             //   if (def_construct_param.default_value.empty())
+             //       continue;
                 const string param_value_template = def_construct_param.default_value;
                 mustache::mustache tmpl{param_value_template};
-                arg_data.set("attr_arg_value", tmpl.render(variable_data));
+                param_value = tmpl.render(variable_data);
             }
+            else {
+                param_value = attached_attr_iter->second.constructor_args[i];
+            }
+
+            arg_data.set("attr_arg_value", param_value);
             constructor_args_data.push_back(arg_data);
         }
 
         mustache::data attribute_data{mustache::data::type::object};
-        attribute_data.set("attr_name", attribute.name);
+        attribute_data.set("attr_name", def.name);
         attribute_data.set("attr_constructor_args", constructor_args_data);
         attached_attributes_data.push_back(attribute_data);
     }
