@@ -9,6 +9,7 @@
 #include <string>
 #include <cstring>
 #include <set>
+#include <unordered_map>
 
 namespace inexor { namespace gluegen {
 
@@ -68,7 +69,7 @@ struct SharedVariable
     const std::vector<std::string> var_namespace;
 
     /// All attributes attached when instancing this variable.
-    std::vector<attached_attribute> attached_attributes;
+    std::unordered_map<std::string, attached_attribute> attached_attributes;
 
     /// Constructs a new SharedVar after parsing a xml variable node.
     SharedVariable(const pugi::xml_node &var_xml, const std::vector<std::string> &var_namespace);

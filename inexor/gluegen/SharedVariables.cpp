@@ -15,6 +15,7 @@
 using std::string;
 using std::to_string;
 using std::vector;
+using std::unordered_map;
 using namespace pugi;
 using namespace kainjow;
 using namespace boost::algorithm;
@@ -141,9 +142,9 @@ SharedVariable::type_node_t type_parser(const vector<xml_node> &type_nodes)
 }
 
 /// Parses " NoSync()|Persistent()|Function([] { echo("hello"); })   "
-vector<SharedVariable::attached_attribute> parse_attached_attributes_string(string attributes_list_str, bool verbose = false)
+unordered_map<string, SharedVariable::attached_attribute> parse_attached_attributes_string(string attributes_list_str, bool verbose = false)
 {
-    vector<SharedVariable::attached_attribute> attributes;
+    unordered_map<string, SharedVariable::attached_attribute> attributes;
     const vector<string> attribute_strings_vec(split_by_delimiter(attributes_list_str, "|")); // tokenize
 
     for(string raw_str : attribute_strings_vec) // e.g. " NoSync() \n" or Range(0, 3) or Persistent(true)
@@ -167,7 +168,7 @@ vector<SharedVariable::attached_attribute> parse_attached_attributes_string(stri
             std::cout << std::endl;
         }
 
-        attributes.push_back(attribute);
+        attributes.emplace(attribute.name, attribute);
     }
     return attributes;
 }
