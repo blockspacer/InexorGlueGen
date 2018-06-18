@@ -29,7 +29,7 @@ namespace gluegen {
 /// not having the attribute attached.
 /// Also the default value gets used when the attached attribute does pass all possible constructor parameters
 /// (so the remaining have the default value set)
-void add_attributes_templatedata(mustache::data &variable_data,
+void add_attached_attributes_templatedata(mustache::data &variable_data,
                                  const unordered_map<string, SharedVariable::attached_attribute> attached_attributes,
                                  const unordered_map<string, attribute_definition> &attribute_definitions)
 {
@@ -233,7 +233,7 @@ mustache::data get_shared_var_templatedata(const SharedVariable &var,
     curvariable.set("name", var.name);
     curvariable.set("index", to_string(index));
 
-    add_attributes_templatedata(curvariable, var.attached_attributes, attribute_definitions);
+    add_attached_attributes_templatedata(curvariable, var.attached_attributes, attribute_definitions);
 
     return curvariable;
 }
@@ -287,11 +287,38 @@ mustache::data print_type_definitions(const unordered_map<string, shared_class_d
 
 }
 
+mustache::data print_attribute_definitions(const unordered_map<string, attribute_definition> &attribute_definitions)
+{
+    mustache::data all_attributes_data{mustache::data::type::list};
+
+    int index = 50005;
+    // TODO: make this index configurable
+    // e.g. by defining an entry in the xml like "<index startval=xy name=optionindex />
+    for(auto &deftupel : attribute_definitions)
+    {
+        auto &def = deftupel.second;
+        mustache::data attribute_data{mustache::data::type::object};
+        attribute_data.set("name", def.name);
+        mustache::data constructor_args_data{mustache::data::type::list};
+        for (auto &constructor_param : def.constructor_args)
+        {
+            mustache::data arg_data{mustache::data::type::object};
+            arg_data.set("arg_name", constructor_param.name);
+            arg_data.set("arg_id", to_string(index++));
+            constructor_args_data.push_back(arg_data);
+        }
+        attribute_data.set("constructor_args", constructor_args_data);
+        all_attributes_data.push_back(attribute_data);
+    }
+    return all_attributes_data;
+}
+
 mustache::data print_data(const vector<SharedVariable> &var_occurences,
                           const unordered_map<string, shared_class_definition> &type_definitions,
                           const unordered_map<string, attribute_definition> &attribute_definitions)
 {
     mustache::data data{mustache::data::type::object};
+    data.set("attribute_definitions", print_attribute_definitions(attribute_definitions));
     data.set("type_definitions", print_type_definitions(type_definitions, attribute_definitions));
     data.set("variables", print_shared_var_occurences(var_occurences, type_definitions, attribute_definitions));
 
