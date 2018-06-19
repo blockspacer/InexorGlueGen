@@ -2,6 +2,7 @@
 #include "inexor/gluegen/SharedVariables.hpp"
 #include "inexor/gluegen/SharedVarDatatypes.hpp"
 #include "inexor/gluegen/SharedAttributes.hpp"
+#include "inexor/gluegen/parse_helpers.hpp"
 #include "inexor/filesystem/path.hpp"
 
 #include <pugiconfig.hpp>
@@ -111,6 +112,8 @@ void add_attached_attributes_templatedata(mustache::data &variable_data,
             }
             else {
                 param_value = attached_attr_iter->second.constructor_args[i];
+                trim(param_value);
+                remove_surrounding_quotes(param_value);
             }
 
             arg_data.set("attr_arg_value", param_value);
