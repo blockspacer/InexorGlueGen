@@ -54,7 +54,9 @@ int main(int argc, const char **argv)
              "The name of the entry becomes the name of a partial which will be available in each <template_file>.")
 
         ("doxygen_AST_folder", po::value<string>()->required(), "The folder containing the doxygen xml (AST) output. \n"
-              "We scan those XML files for Shared Declarations");
+              "We scan those XML files for Shared Declarations")
+        ("output_folder", po::value<string>(), "The folder where all generated files land.\n"
+              "If not given, they get placed in the current working dir.");
 
     std::string exec{argv[0]};
 
@@ -81,6 +83,7 @@ int main(int argc, const char **argv)
 
     const vector<string> template_files = cli_config["template_file"].as<vector<string>>();
     const vector<string> partial_files = cli_config.count("partial_file") ? cli_config["partial_file"].as<vector<string>>() : vector<string>();
+    const string output_folder = cli_config.count("output_folder") ? cli_config["output_folder"].as<string>() : string();
     const string xml_AST_folder = cli_config["doxygen_AST_folder"].as<string>();
 
     ASTs code;
@@ -95,7 +98,7 @@ int main(int argc, const char **argv)
 
     mustache::data template_base_data = print_data(var_occurences, type_definitions, attribute_definitions);
 
-    render_files(template_base_data, partial_files, template_files);
+    render_files(template_base_data, partial_files, template_files, output_folder);
 
 
     // Read the list of variables
