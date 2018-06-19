@@ -38,18 +38,21 @@ name_defaultvalue_vector find_so_constructors_args(attribute_definition &opt, co
     {
         name_defaultvalue_tupel arg;
         arg.name = get_complete_xml_text(param.child("declname"));
-        arg.default_value = get_complete_xml_text(param.child("defval"));
-        std::cout << "arg.name: " << arg.name << std::endl;
+        string raw_default_value = get_complete_xml_text(param.child("defval"));
 
-        if(!arg.default_value.empty())
+        if(!raw_default_value.empty())
         {
             opt.constructor_has_default_values = true;
             std::string temp;
-            arg.default_value = parse_bracket(arg.default_value, temp, temp); // fu_cast<float>( "{{index}}\n{{name}}" ) -> "{{index}}\n{{name}}"
+            arg.default_value = parse_bracket(raw_default_value, temp, temp); // fu_cast<float>( "{{index}}\n{{name}}" ) -> "{{index}}\n{{name}}"
             trim(arg.default_value);                                          // remove whitespace around "{{index}}\n{{name}}"
             remove_surrounding_quotes(arg.default_value);                     // -> {{index}}'\''n'{{name}}
             unescape(arg.default_value);                                      // replace "\\n" with newline char.
         }
+        std::cout << "Constructor Argument Name: " << arg.name
+                   << (arg.default_value.empty() ? "" : " (default: "+arg.default_value+", raw: "+raw_default_value+")")
+                   << std::endl;
+
         constructor_args.push_back(arg);
     }
     return constructor_args;
@@ -91,13 +94,13 @@ name_defaultvalue_vector find_attributes_class_const_char_members(attribute_defi
 const attribute_definition parse_shared_attribute_definition(const xml_node &compound_xml)
 {
     attribute_definition opt(get_complete_xml_text(compound_xml.child("compoundname")));
-    std::cout << "SharedAttribute-derived class definition found: " << opt.name << std::endl;
+    std::cout << "Attribute class found: " << opt.name << std::endl;
 
     opt.constructor_args = find_so_constructors_args(opt, compound_xml);
     opt.const_char_members = find_attributes_class_const_char_members(opt, compound_xml);
 
-    for(auto member : opt.const_char_members)
-        std::cout << "['const char *'-members of " << opt.name << "] " << member.name << " = " << member.default_value << std::endl;
+ //   for(auto member : opt.const_char_members)
+ //       std::cout << "['const char *'-members of " << opt.name << "] " << member.name << " = " << member.default_value << std::endl;
     return opt;
 }
 
