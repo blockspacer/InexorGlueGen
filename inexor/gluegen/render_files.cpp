@@ -12,6 +12,7 @@
 using namespace pugi;
 using namespace kainjow;
 using namespace std;
+using namespace inexor::filesystem;
 
 namespace inexor {
 namespace gluegen {
@@ -26,7 +27,8 @@ void save_to_file(const std::string &filepath, const std::string &file_content)
 
 void render_files(mustache::data &tmpldata,
                   const std::vector<std::string> &partial_files,
-                  const std::vector<std::string> &template_files)
+                  const std::vector<std::string> &template_files,
+                  const string &output_folder)
 {
     for(const string &file : template_files)
     {
@@ -60,7 +62,8 @@ void render_files(mustache::data &tmpldata,
         // secondly render all files, using the templatedata
         for(auto &a : xml->children("file"))
         {
-            const string file_name = a.attribute("filename").value();
+            const Path file_name = a.attribute("filename").value();
+            const Path file_path = Path(output_folder) / file_name;
             const string file_templ = a.child_value();
             mustache::mustache tmpl{file_templ};
             if(!tmpl.is_valid())
@@ -68,7 +71,7 @@ void render_files(mustache::data &tmpldata,
                             << tmpl.error_message() << std::endl;
 
             const string file_content = tmpl.render(local_tmpldata);
-            save_to_file(file_name, file_content);
+            save_to_file(file_path.string(), file_content);
         }
     }
 }
