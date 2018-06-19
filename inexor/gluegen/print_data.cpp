@@ -216,6 +216,22 @@ void add_type_node_data(const SharedVariable::type_node_t &type_node,
     data.set("template_types", tmpl_data);
 }
 
+/// This function returns the "path" as used in the proto files
+string get_path_of_var(const SharedVariable &var)
+{
+    string p = "/";
+
+    for(const string &ns_part : var.var_namespace)
+    {
+        if (ns_part == "inexor") continue;
+        p += ns_part + "/";
+    }
+
+    p += var.name;
+
+    return p;
+}
+
 /// Print all data corresponding to a specific shared variable, set an index for each.
 mustache::data get_shared_var_templatedata(const SharedVariable &var,
                                            const unordered_map<string, shared_class_definition> &type_definitions,
@@ -231,6 +247,7 @@ mustache::data get_shared_var_templatedata(const SharedVariable &var,
         ns.push_back(mustache::data(ns_part));
     curvariable.set("namespace", ns);
     curvariable.set("name", var.name);
+    curvariable.set("path", get_path_of_var(var));
     curvariable.set("index", to_string(index));
 
     add_attached_attributes_templatedata(curvariable, var.attached_attributes, attribute_definitions);
