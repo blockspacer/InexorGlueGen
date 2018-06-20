@@ -22,11 +22,14 @@ using namespace boost::algorithm;
 
 namespace inexor { namespace gluegen {
 
+vector<string> reflection_marker_searchstrings;
+
 /// Returns true if this node is marked to be shared.
 bool is_marked_variable(const xml_node &member_xml)
 {
-    if(contains(get_complete_xml_text(member_xml.child("initializer")), "reflection_marking"))
-        return true;
+    for (const string &search : reflection_marker_searchstrings)
+        if(contains(get_complete_xml_text(member_xml.child("initializer")), search))
+            return true;
     return false;
 }
 

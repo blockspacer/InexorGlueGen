@@ -56,13 +56,16 @@ int main(int argc, const char **argv)
         ("doxygen_AST_folder", po::value<string>()->required(), "The folder containing the doxygen xml (AST) output. \n"
               "We scan those XML files for Shared Declarations")
         ("output_folder", po::value<string>(), "The folder where all generated files land.\n"
-              "If not given, they get placed in the current working dir.");
+              "If not given, they get placed in the current working dir.")
+        ("reflection_marker", po::value<std::vector<std::string>>()->multitoken()->composing()->default_value({"reflection_mark"}, ""),
+              "If this search string occurs in the initializer of a variable, it gets marked for reflection.\n"
+              "Multiple reflection markers can be given.");
 
     std::string exec{argv[0]};
 
     vector<string> args(argv+1, argv+argc);
     std::cout << "Used command line options: \n";
-    for(auto arg : args) std::cout << arg << "\n";
+    for(const auto &arg : args) std::cout << arg << "\n";
     try {
         po::parsed_options parsed = po::command_line_parser(args).options(params).run();
         po::store(parsed, cli_config);
@@ -85,6 +88,7 @@ int main(int argc, const char **argv)
     const vector<string> partial_files = cli_config.count("partial_file") ? cli_config["partial_file"].as<vector<string>>() : vector<string>();
     const string output_folder = cli_config.count("output_folder") ? cli_config["output_folder"].as<string>() : string();
     const string xml_AST_folder = cli_config["doxygen_AST_folder"].as<string>();
+    reflection_marker_searchstrings = cli_config["reflection_marker"].as<vector<string>>();
 
     ASTs code;
     code.load_from_directory(xml_AST_folder);
