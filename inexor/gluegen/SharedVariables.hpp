@@ -79,6 +79,10 @@ struct SharedVariable
 /// Find all marked global variables inside a bunch of AST xml files (as spit out by doxygen) and save them in a vector.
 extern const std::vector<SharedVariable> find_shared_var_occurences(const std::vector<std::unique_ptr<pugi::xml_document>> &AST_code_xmls);
 
+/// If one of these strings is in the initializer of a variable, it is marked for reflection and
+/// gets recognized by the gluegen tool.
+extern std::vector<std::string> reflection_marker_searchstrings;
+
 /// Returns true if this node is marked to be shared.
 extern bool is_marked_variable(const pugi::xml_node &member_xml);
 
