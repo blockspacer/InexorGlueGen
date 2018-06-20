@@ -71,23 +71,30 @@ void add_template_type_alias(const xml_node &compound_xml, const SharedVariable:
     size_t i = 0;
     for(const auto &template_param : compound_xml.child("templateparamlist").children())
     {
-        std::string param_str = template_param.child("type").child_value(); // e.g. "typename U"
+        std::string param_str = template_param.child("defname").child_value();
 
-        vector<string> param_words(split_by_delimiter(param_str, " ")); // e.g. "typename", "U"
-        if (param_words.size() != 2 || (param_words[0] != "class" && param_words[0] != "typename"))
+        if (param_str.empty()) {
+            // Sometimes doxygen does not recognize the defname correctly, so we split the type "typename/class T"
+            // manually.
+            const string param_str_lit = template_param.child("type").child_value();
+            const std::vector<string> param_words(split_by_delimiter(param_str_lit, " ")); // e.g. "typename", "U"
+            param_str = param_words.size() == 2 ? param_words[1] : "";
+        }
+
+        if (param_str.empty())
         {
-            std::cerr << "ERROR: Template parameters of SharedClasses need to be in form\n"
-                      << "'typename PLACEHOLDER' or 'class PLACEHOLDER'\n"
-                      << "Class in question is " << compound_xml.child("compoundname").child_value() << std::endl;
+            std::cerr << "ERROR: Template parameters of types of variables marked for reflection not recognized for \n"
+                      << "type " << compound_xml.child("compoundname").child_value() << std::endl;
             std::exit(1);
         }
+
         if (type->template_types.size() <= i)
         {
             std::cerr << "ERROR: Template parameters of SharedClass definition does not match instance\n"
                       << "Class in question is " << compound_xml.child("compoundname").child_value() << std::endl;
             std::exit(1);
         }
-        map.emplace(param_words[1], &type->template_types[i]);
+        map.emplace(param_str, &type->template_types[i]);
         i++;
     }
 }
