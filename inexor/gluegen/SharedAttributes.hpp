@@ -11,12 +11,13 @@
 namespace inexor {
 namespace gluegen {
 
-struct name_defaultvalue_tupel
+
+struct function_parameter
 {
+    std::string type;
     std::string name;
     std::string default_value;
 };
-typedef std::vector<name_defaultvalue_tupel> name_defaultvalue_vector;
 
 /// A declaration of a class with a "SharedVarAttribute" parent class.
 ///
@@ -38,18 +39,15 @@ struct attribute_definition
     /// The name of the class/shared attribute
     std::string name;
 
-    /// Whether or not the constructor has default values is important for subsequent
-    bool constructor_has_default_values = false;
+    struct constructor {
+        /// All constructor arguments: name first, defaultvalue second.
+        /// since its an ordered map we have the positions of the arguments.
+        std::vector<function_parameter> constructor_args;
 
-    /// All constructor arguments: name first, defaultvalue second.
-    /// since its an ordered map we have the positions of the arguments.
-    // we dont have type deduction!
-    name_defaultvalue_vector constructor_args;
-
-    /// "const char *" members are template "partials" (see mustache docs) for our shared declarations.
-    ///
-    /// They may contain template data entries previously available or those named the same as the constructor parameters.
-    name_defaultvalue_vector const_char_members;
+        /// Whether this constructor has arguments with default values or not.
+        bool has_default_values = false;
+    };
+    std::vector<constructor> constructors;
 
     attribute_definition() {}
     attribute_definition(std::string &&class_name) : name(class_name) {}

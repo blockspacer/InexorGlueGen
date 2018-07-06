@@ -24,64 +24,52 @@ namespace inexor { namespace gluegen {
 /// We furthermore require to have default values for either all or no constructor arguments.
 /// + all default_values across all constructors need to be the same.
 /// Error if those requirements aren't met.
-name_defaultvalue_vector find_so_constructors_args(attribute_definition &opt, const xml_node &compound_xml)
+function_parameter parse_constructors_arg(const xml_node &arg_xml)
 {
-    name_defaultvalue_vector constructor_args;
+        function_parameter arg;
+        arg.name = get_complete_xml_text(arg_xml.child("declname"));
+        arg.type = get_complete_xml_text(arg_xml.child("type"));
 
-    auto constructor_vector = find_class_constructors(compound_xml);
-    if(constructor_vector.empty()) return name_defaultvalue_vector();
-
-    // The first constructor fills the argument list, the following just control whether their lists are equal.
-    const xml_node first_constructor = constructor_vector.front();
-
-    for(const xml_node param : first_constructor.children("param"))
-    {
-        name_defaultvalue_tupel arg;
-        arg.name = get_complete_xml_text(param.child("declname"));
-        string raw_default_value = get_complete_xml_text(param.child("defval"));
-
+        string raw_default_value = get_complete_xml_text(arg_xml.child("defval"));
         if(!raw_default_value.empty())
         {
-            opt.constructor_has_default_values = true;
-            std::string temp;
-            arg.default_value = parse_bracket(raw_default_value, temp, temp); // fu_cast<float>( "{{index}}\n{{name}}" ) -> "{{index}}\n{{name}}"
-            trim(arg.default_value);                                          // remove whitespace around "{{index}}\n{{name}}"
-            remove_surrounding_quotes(arg.default_value);                     // -> {{index}}'\''n'{{name}}
-            unescape(arg.default_value);                                      // replace "\\n" with newline char.
+            std::string dummy;
+
+            // remove possible cast operations
+            // i.e. fu_cast<float>( "{{index}}\n{{name}}" ) -> ' "{{index}}\n{{name}}" '
+            arg.default_value = parse_bracket(raw_default_value, dummy, dummy);
+
+            // remove whitespace around the argument
+            trim(arg.default_value);
+
+            // -> {{index}}'\''n'{{name}}
+            remove_surrounding_quotes(arg.default_value);
+
+            // replace "\\n" with newline char.
+            unescape(arg.default_value);
         }
         std::cout << "Constructor Argument Name: " << arg.name
                    << (arg.default_value.empty() ? "" : " (default: "+arg.default_value+", raw: "+raw_default_value+")")
                    << std::endl;
 
-        constructor_args.push_back(arg);
-    }
-    return constructor_args;
-
-    // TODO Error checking:
-    // * check qualness of constructor argument names of the different constructors
-    // * allow only: all constructor arguments or no constructor args have default values!
-    //    * (we dont want control individually whether constructor param have default values, since
-    //       that may require us to match different constructors when parsing the instances. that would be too complex)
+        return arg;
 }
 
-name_defaultvalue_vector find_attributes_class_const_char_members(attribute_definition &opt, const xml_node &compound_xml)
+const attribute_definition::constructor parse_constructor(const xml_node &constructor_xml)
 {
-    name_defaultvalue_vector const_char_members;
+    attribute_definition::constructor constr;
 
-    for(auto var_xml : find_class_member_vars(compound_xml))
-    {
-        if(!contains(get_complete_xml_text(var_xml.child("type")), "char")) continue;
+    std::vector<function_parameter> constructor_args;
 
-        name_defaultvalue_tupel var;
-        var.name = get_complete_xml_text(var_xml.child("name"));
-        var.default_value = get_complete_xml_text(var_xml.child("initializer"));
-        remove_leading_assign_sign(var.default_value);
-        trim(var.default_value); //remove whitespace
-        remove_surrounding_quotes(var.default_value);
-        const_char_members.push_back(var);
+    for(const xml_node &param : constructor_xml.children("param")) {
+        constr.constructor_args.push_back(parse_constructors_arg(param));
     }
 
-    return const_char_members;
+    // last arg must have a default value..
+    if (!constr.constructor_args.empty() && !constr.constructor_args.back().default_value.empty())
+        constr.has_default_values = true;
+
+    return constr;
 }
 
 /// This function parses an attribute_definition xml node and save it to our attribute_definitions map.
@@ -96,11 +84,9 @@ const attribute_definition parse_shared_attribute_definition(const xml_node &com
     attribute_definition opt(get_complete_xml_text(compound_xml.child("compoundname")));
     std::cout << "Attribute class found: " << opt.name << std::endl;
 
-    opt.constructor_args = find_so_constructors_args(opt, compound_xml);
-    opt.const_char_members = find_attributes_class_const_char_members(opt, compound_xml);
+    for (const auto &constructor_xml : find_class_constructors(compound_xml))
+        opt.constructors.push_back(parse_constructor(constructor_xml));
 
- //   for(auto member : opt.const_char_members)
- //       std::cout << "['const char *'-members of " << opt.name << "] " << member.name << " = " << member.default_value << std::endl;
     return opt;
 }
 

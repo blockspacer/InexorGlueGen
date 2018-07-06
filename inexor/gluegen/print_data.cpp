@@ -24,6 +24,103 @@ using boost::replace_all;
 namespace inexor {
 namespace gluegen {
 
+enum TYPE {TYPE_INT, TYPE_FLOAT, TYPE_DOUBLE, TYPE_BOOL, TYPE_CHAR_ARRAY};
+
+
+void remove_substrs(string &str, const string &pattern) {
+    string::size_type n = pattern.length();
+    for (string::size_type i = str.find(pattern); i != string::npos; i = str.find(pattern))
+        str.erase(i, n);
+}
+
+void cut_qualifiers(string &literal_type)
+{
+    remove_substrs(literal_type, "const ");
+    // This is not bulletproof, but good enough.
+}
+
+bool is_compatible_type(TYPE given_type, string expected_type)
+{
+    cut_qualifiers(expected_type);
+    trim(expected_type);
+    switch (given_type) {
+        case TYPE_BOOL:{
+            if(expected_type == "bool") return true;
+        }
+        case TYPE_INT:{
+            if(expected_type == "int") return true;
+        }
+        case TYPE_FLOAT:{
+            if(expected_type == "float") return true;
+        }
+        case TYPE_DOUBLE:{
+            if(expected_type == "double") return true;
+            break;
+        }
+        case TYPE_CHAR_ARRAY:{
+            if(expected_type == "char *") return true;
+            if(expected_type == "char*") return true;
+            if(expected_type == "std::string") return true;
+        }
+    }
+    return false;
+}
+
+/// Returns the primitive type of the literal.
+/// Limited in functionality as it only distinquishes between int and char *
+const TYPE get_type_of_literal(const string &literal)
+{
+    if (literal.find('"') != string::npos) return TYPE_CHAR_ARRAY;
+    if (literal.find('f') != string::npos) return TYPE_FLOAT;
+    if (literal.find('.') != string::npos) return TYPE_DOUBLE;
+    if (literal == "true" || literal == "false") return TYPE_BOOL;
+    return TYPE_INT;
+}
+
+bool is_compatible_constructor(const vector<string> &given_arguments,
+                               const attribute_definition::constructor &constr_definition)
+{
+    int i;
+    for(i = 0; i < given_arguments.size(); i++)
+    {
+        if(i >= constr_definition.constructor_args.size()) return false;
+
+        const function_parameter def_arg = constr_definition.constructor_args[i];
+        TYPE t = get_type_of_literal(given_arguments[i]);
+        if(!is_compatible_type(t, def_arg.type)) return false;
+    }
+    // if all arguments until here are compatible, we still didn't handle the case
+    // that we did not pass all arguments, but only a subset.
+    // in that case, the remaining args need to have default values set.
+    size_t expected_arg_number = constr_definition.constructor_args.size();
+    if (expected_arg_number != 0 && i < expected_arg_number-1)
+        if (!constr_definition.constructor_args[i].default_value.empty())
+            return false;
+    return true;
+}
+
+/// Returns that operator of the list of overloaded operators, which corresponds to the list of given arguments.
+const attribute_definition::constructor
+    find_constructor_by_typelist(const vector<string> &given_arguments,
+                                 const vector<attribute_definition::constructor> &possible_constructors)
+{
+    for(const attribute_definition::constructor &con : possible_constructors)
+    {
+        if (is_compatible_constructor(given_arguments, con))
+            return con;
+    }
+    throw std::logic_error("No fitting constructor found");
+}
+
+/// This removes whitespace, trim any surrounding whitespace, in the future also convert literals (i.e hex -> decimal)
+string convert_literal_to_protobuf_comatible_literal(const string &mangled_literal)
+{
+    string out = mangled_literal;
+    trim(out);
+    remove_surrounding_quotes(out);
+    return out;
+}
+
 /// Add templatedata for this shared variable coming from attributes.
 /// Attached atributes are technically class instances.
 /// If a defined attribute has default values, the attribute should be added to each variable
@@ -40,7 +137,7 @@ void add_attached_attributes_templatedata(mustache::data &variable_data,
      *
      *      a) if argument given, map it and add it to variable template data
      *              - argument_name: passed value
-     *              - dont evaluate passed value (no constant reformatting or w/e currently)
+     *              - dont evaluate passed value (no constant folding or w/e currently)
      *      b) if argument not given, but has defaultvalue, use default value
      *              - default value can use the type of the parameter (i.e. int wanted, int given)
      *              - default value can be a string casted to the type of the parameter (i.e. int wanted, string given)
@@ -63,22 +160,23 @@ void add_attached_attributes_templatedata(mustache::data &variable_data,
     {
         auto &def = deftupel.second;
         mustache::data constructor_args_data{mustache::data::type::list};
-        // This defined attribute was not found in the list of attached attributes
-        bool attribute_not_attached = false;
-        bool use_default_value = false;
 
+        // This defined attribute was found in the list of attached attributes
+        bool attribute_is_attached;
         auto attached_attr_iter = attached_attributes.find(def.name);
-        if(attached_attr_iter == attached_attributes.end())
-        {
-            if (!def.constructor_has_default_values)
-                continue;
-            attribute_not_attached = true;
-            use_default_value = true;
-        }
+        if(attached_attr_iter != attached_attributes.end())
+            attribute_is_attached = true;
+        else
+            attribute_is_attached = false;
 
-        for(size_t i = 0; i < def.constructor_args.size(); i++)
+        const auto constructor = find_constructor_by_typelist(attribute_is_attached
+                                     ? attached_attr_iter->second.constructor_args
+                                     : vector<string>(),
+                                    def.constructors);
+
+        for(size_t i = 0; i < constructor.constructor_args.size(); i++)
         {
-            const name_defaultvalue_tupel &def_construct_param = def.constructor_args[i];
+            const function_parameter &def_construct_param = constructor.constructor_args[i];
             const string param_name = def_construct_param.name;
 
 
@@ -86,24 +184,15 @@ void add_attached_attributes_templatedata(mustache::data &variable_data,
             arg_data.set("attr_arg_name", param_name);
             string param_value;
 
+            string given_argument = attribute_is_attached ?
+                                    (attached_attr_iter->second.constructor_args.size() > i ?
+                                        attached_attr_iter->second.constructor_args[i]
+                                     : "")
+                                    : "";
 
-            if (!attribute_not_attached)
-            {
-                const SharedVariable::attached_attribute attribute = attached_attr_iter->second;
+            if (given_argument.empty()) {
+                // use default value.
 
-                if (i >= attribute.constructor_args.size())
-                {
-                    if (def_construct_param.default_value.empty()) {
-                        // TODO: Do we handle = "" correctly?
-                        std::cout << "Error: Not enough constructor arguments given for " << def.name << std::endl;
-                        break;
-                    }
-                    // incomplete list: take the first params from the caller, the rest is default.
-                    use_default_value = true;
-                }
-            }
-
-            if (use_default_value) {
              //   if (def_construct_param.default_value.empty())
              //       continue;
                 const string param_value_template = def_construct_param.default_value;
@@ -111,9 +200,7 @@ void add_attached_attributes_templatedata(mustache::data &variable_data,
                 param_value = tmpl.render(variable_data);
             }
             else {
-                param_value = attached_attr_iter->second.constructor_args[i];
-                trim(param_value);
-                remove_surrounding_quotes(param_value);
+                param_value = convert_literal_to_protobuf_comatible_literal(given_argument);
             }
 
             arg_data.set("attr_arg_value", param_value);
@@ -320,13 +407,16 @@ mustache::data print_attribute_definitions(const unordered_map<string, attribute
         mustache::data attribute_data{mustache::data::type::object};
         attribute_data.set("name", def.name);
         mustache::data constructor_args_data{mustache::data::type::list};
-        for (auto &constructor_param : def.constructor_args)
-        {
-            mustache::data arg_data{mustache::data::type::object};
-            arg_data.set("arg_name", constructor_param.name);
-            arg_data.set("arg_id", to_string(index++));
-            constructor_args_data.push_back(arg_data);
-        }
+        if (!def.constructors.empty())
+            for (auto &constructor_param : def.constructors.front().constructor_args)
+            {
+                // only list the constructor params of the first constructor to avoid name clashes between overloaded
+                // constructors.
+                mustache::data arg_data{mustache::data::type::object};
+                arg_data.set("arg_name", constructor_param.name);
+                arg_data.set("arg_id", to_string(index++));
+                constructor_args_data.push_back(arg_data);
+            }
         attribute_data.set("constructor_args", constructor_args_data);
         all_attributes_data.push_back(attribute_data);
     }
