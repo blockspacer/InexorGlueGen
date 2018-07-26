@@ -10,7 +10,7 @@ class InexorgluegenConan(ConanFile):
     url = "https://github.com/inexorgame/inexor-core/"
     # Note:  we always want it to be built as release build, as its distributed as executable only.
     settings = "os", "compiler", "build_type", "arch"
-    requires = (("kainjow-mustache/3.1@inexorgame/stable"),
+    requires = (("kainjow-mustache/3.2.1@bincrafters/stable"),
             ("pugixml/1.8.1@bincrafters/stable"),
             ("Boost/1.66.0@conan/stable"))
 
