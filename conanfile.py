@@ -11,7 +11,7 @@ class InexorgluegenConan(ConanFile):
     # Note:  we always want it to be built as release build, as its distributed as executable only.
     settings = "os", "compiler", "build_type", "arch"
     requires = (("kainjow-mustache/3.2.1@bincrafters/stable"),
-            ("pugixml/1.9.0@bincrafters/stable"),
+            ("pugixml/1.9@bincrafters/stable"),
             ("Boost/1.66.0@conan/stable"))
 
     # Usage dependencies: grpc (+ protobuf), doxygen
