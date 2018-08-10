@@ -3,7 +3,7 @@ from conans import ConanFile, CMake
 
 class InexorgluegenConan(ConanFile):
     name = "InexorGlueGen"
-    version = "0.6.9"
+    version = "0.6.10"
     description = """This is the Conan package for the Inexor game gluecode generator, which generates our network code (which is also our scripting binding)
                      to sync variables/classes/lists without writing extra code."""
     license = "ZLIB"
@@ -12,7 +12,7 @@ class InexorgluegenConan(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
     requires = (("kainjow-mustache/3.2.1@bincrafters/stable"),
             ("pugixml/1.9@bincrafters/stable"),
-            ("Boost/1.66.0@conan/stable"))
+            ("boost/1.66.0@conan/stable"))
 
     # Usage dependencies: grpc (+ protobuf), doxygen
     generators = "cmake"
